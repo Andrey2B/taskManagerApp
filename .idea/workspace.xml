@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="642066fb-92bc-4b6c-8ded-d7ba1a5941ed" name="Changes" comment=".">
-      <change afterPath="$PROJECT_DIR$/app/Procfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/runtime.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="642066fb-92bc-4b6c-8ded-d7ba1a5941ed" name="Changes" comment="." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
