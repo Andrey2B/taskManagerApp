@@ -5,6 +5,7 @@ from .. import models
 from ..schemas import UserCreate, UserLogin
 from ..crud import create_user, authenticate_user
 from ..dependencies import get_db, get_current_user
+from ..dependencies import get_db, is_admin
 from jose import jwt
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -28,3 +29,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
 @router.get("/me")
 def read_current_user(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+@router.get("/all")
+def get_all_users(db: Session = Depends(get_db), current_user: models.User = Depends(is_admin)):
+    return db.query(models.User).all()
