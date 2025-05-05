@@ -1,34 +1,83 @@
 import axios from 'axios';
-import { Task, CreateTaskDto, UpdateTaskDto } from '../types/task';
+import { CreateTaskDto, UpdateTaskDto, Task } from '../types/task';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
 
-export const getTasks = async (token: string, projectId?: string) => {
-  const url = projectId ? `${API_URL}/tasks?projectId=${projectId}` : `${API_URL}/tasks`;
-  const response = await axios.get(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.data;
+const getToken = () => {
+  const token = localStorage.getItem('token');
+  if (!token) throw new Error('Пользователь не авторизован');
+  return token;
 };
 
-export const createTask = async (taskData: CreateTaskDto,
-  token: string) => {
-  const response = await axios.post(`${API_URL}/tasks`, taskData, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.data;
+// Добавить задачу
+export const addTask = async (taskData: CreateTaskDto): Promise<Task> => {
+  try {
+    const response = await axios.post<Task>(
+      `${API_URL}/tasks/`,
+      taskData,
+      { headers: { Authorization: `Bearer ${getToken()}` } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при добавлении задачи:', error);
+    throw error;
+  }
 };
 
-export const updateTask = async (id: string, taskData: any, token: string) => {
-  const response = await axios.put(`${API_URL}/tasks/${id}`, taskData, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.data;
+// Получить задачу по ID
+export const getTaskById = async (taskId: string): Promise<Task> => {
+  try {
+    const response = await axios.get<Task>(
+      `${API_URL}/tasks/${taskId}`,
+      { headers: { Authorization: `Bearer ${getToken()}` } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при получении задачи:', error);
+    throw error;
+  }
 };
 
-export const deleteTask = async (id: string, token: string) => {
-  const response = await axios.delete(`${API_URL}/tasks/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.data;
+// Получить задачи
+export const getTasks = async (): Promise<Task[]> => {
+  try {
+    const response = await axios.get<Task[]>(
+      `${API_URL}/tasks/`,
+      { headers: { Authorization: `Bearer ${getToken()}` } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при получении задач:', error);
+    throw error;
+  }
+};
+
+
+// Обновить задачу
+export const updateTask = async (taskId: string, taskData: UpdateTaskDto): Promise<Task> => {
+  try {
+    const response = await axios.put<Task>(
+      `${API_URL}/tasks/${taskId}`,
+      taskData,
+      { headers: { Authorization: `Bearer ${getToken()}` } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при обновлении задачи:', error);
+    throw error;
+  }
+};
+
+// Удалить задачу
+export const deleteTask = async (taskId: string): Promise<{ message: string }> => {
+  try {
+    const response = await axios.delete<{ message: string }>(
+      `${API_URL}/tasks/${taskId}`,
+      { headers: { Authorization: `Bearer ${getToken()}` } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при удалении задачи:', error);
+    throw error;
+  }
 };

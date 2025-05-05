@@ -12,6 +12,7 @@ import {
   Divider,
   useTheme
 } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Task as TaskIcon,
   AssignmentTurnedIn as AssignedIcon,
@@ -34,7 +35,19 @@ const NotificationsPage = () => {
       type: 'task_assigned',
       read: false,
       data: {
-        task: { id: '1', title: 'Разработать интерфейс уведомлений' },
+        task: { 
+          id: '1', 
+          title: 'Разработать интерфейс уведомлений',
+          description: 'Создать страницу уведомлений и интегрировать её с API',
+          status: 'todo',
+          priority: 'medium',
+          assignedTo: undefined,
+          dueDate: undefined,
+          projectId: 'defaultProjectId',
+          createdBy: 'mockUser',
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        },
         changedBy: 'Иванова Д.С.'
       },
       createdAt: new Date().toISOString()
@@ -44,7 +57,19 @@ const NotificationsPage = () => {
       type: 'task_status_changed',
       read: true,
       data: {
-        task: { id: '2', title: 'Интеграция с СберБокс', status: 'in-progress' },
+        task: {
+          id: '2',
+          title: 'Интеграция с СберБокс',
+          description: 'Подключить и протестировать интеграцию со СберБокс',
+          status: 'in-progress',
+          priority: 'high',
+          assignedTo: 'user123',
+          dueDate: '2025-05-01T00:00:00Z',
+          projectId: 'defaultProjectId',
+          createdBy: 'mockUser',
+          createdAt: '2025-03-30T12:00:00Z',
+          updatedAt: '2025-04-01T10:30:00Z'
+        },
         changedBy: 'Запольских Н.В.'
       },
       createdAt: '2025-04-01T10:30:00Z'
@@ -161,7 +186,7 @@ const NotificationsPage = () => {
                 </ListItemIcon>
                 <ListItemText
                   primary={
-                    <Link to={details.link} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <Link component={RouterLink} to={details.link} style={{ textDecoration: 'none', color: 'inherit' }}>
                       <Typography sx={{ fontWeight: notification.read ? 'normal' : 'bold' }}>
                         {details.text}
                       </Typography>
@@ -186,4 +211,4 @@ const NotificationsPage = () => {
   );
 };
 
-export default NotificationsPage; // 👈 Default export
+export default NotificationsPage;

@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Task } from '../../types/task';
 import TaskForm from '../tasks/TaskForm';
+import { getPriorityColor } from '../../utils/getPriorityColor';
 
 interface CalendarTaskModalProps {
   open: boolean;
@@ -26,13 +27,14 @@ const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({ open, onClose, da
               <Chip label={`Статус: ${task.status}`} />
               <Chip 
                 label={`Приоритет: ${task.priority}`} 
-                color={
-                  task.priority === 'high' ? 'error' : 
-                  task.priority === 'medium' ? 'warning' : 'success'
-                }
+                color={getPriorityColor(task.priority)} 
               />
               <Chip 
-                label={`Срок: ${format(new Date(task.dueDate), 'd MMMM yyyy', { locale: ru })}`} 
+                label={`Срок: ${
+                  task.dueDate && !isNaN(new Date(task.dueDate).getTime())
+                    ? format(new Date(task.dueDate), 'd MMMM yyyy', { locale: ru })
+                    : 'Дата не установлена'
+                }`} 
               />
             </Box>
           </DialogContent>
@@ -44,8 +46,10 @@ const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({ open, onClose, da
         <TaskForm
           open={open}
           onClose={onClose}
-          onSubmit={(taskData) => {
+          onSubmit={async (taskData) => {
             console.log('Создать задачу:', taskData);
+            // Если нужно выполнить асинхронные действия, например, отправить запрос на сервер:
+            // await yourAsyncFunction(taskData);
             onClose();
           }}
           initialData={{ dueDate: date.toISOString() }}

@@ -1,4 +1,3 @@
-// src/pages/ProjectsPage.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -14,28 +13,31 @@ import {
   IconButton
 } from '@mui/material';
 import { Add, Search, FilterList } from '@mui/icons-material';
-import { Project } from '../types'; // Предполагается, что у вас есть тип Project
-
+import { Project } from '../types/project';
+import { getProjects } from '../api/projects'; // ← тут важно 'projects' (а не 'project')
+  
 export const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
-  // Загрузка проектов (замените на реальный API-запрос)
+  // Загрузка проектов с сервера
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        // Пример моковых данных
-        const mockProjects: Project[] = [
-          { id: '1', name: 'Проект 1', description: 'Описание проекта 1', status: 'active' },
-          { id: '2', name: 'Проект 2', description: 'Описание проекта 2', status: 'completed' },
-        ];
-        
-        setProjects(mockProjects);
-        setLoading(false);
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.error('Токен не найден');
+          setLoading(false);
+          return;
+        }
+
+        const projectsFromServer = await getProjects(token);
+        setProjects(projectsFromServer);
       } catch (error) {
         console.error('Ошибка загрузки проектов:', error);
+      } finally {
         setLoading(false);
       }
     };

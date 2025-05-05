@@ -5,16 +5,43 @@ export interface Project {
   name: string;
   description: string;
   status: ProjectStatus;
-  members: ProjectMember[];
+  members: ProjectMember[]; // Список пользователей и их ролей в проекте
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  createdBy: string;
+}
+
+interface ProjectUser {
+  userId: string;
+  role: UserRole;
+}
+
+export type ProjectRole = 
+  | 'owner'   
+  | 'developer' 
+  | 'designer'  
+  | 'manager'   
+  | 'qa'         
+  | 'analyst';  
+
+export interface CreateProjectData {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateProjectData {
+  name?: string;
+  description?: string;
+  deadline?: string;
 }
 
 export type ProjectStatus = 'active' | 'archived' | 'completed';
 
 export interface ProjectMember {
+  id: string;  // Убедитесь, что это поле есть
   user: User | string; // string - когда приходит только ID
   role: ProjectRole;
+  name?: string;
 }
 
 export type ProjectRole = 'owner' | 'editor' | 'viewer';

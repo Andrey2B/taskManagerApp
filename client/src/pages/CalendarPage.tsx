@@ -8,8 +8,11 @@ import { Task } from '../types/task';
 import { useTasks } from '../hooks/useTasks';
 import TaskCalendarDay from '../components/calendar/TaskCalendarDay';
 import CalendarTaskModal from '../components/calendar/CalendarTaskModal';
-import { useVoice } from '../hooks/useVoice';
-import VoiceButton from '../components/ui/VoiceButton';
+
+import 'dayjs/locale/ru';
+
+//import { useVoice } from '../hooks/useVoice';
+//import VoiceButton from '../components/ui/VoiceButton';
 
 const CalendarPage: React.FC = () => {
   const theme = useTheme();
@@ -18,7 +21,7 @@ const CalendarPage: React.FC = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const { tasks, loading, error } = useTasks();
-  const { voiceCommand, startVoice } = useVoice();
+  //const { voiceCommand, startVoice } = useVoice();
 
   // Фильтрация задач для выбранной даты
   useEffect(() => {
@@ -32,9 +35,9 @@ const CalendarPage: React.FC = () => {
 
   // Обработка голосовых команд
   useEffect(() => {
-    if (!voiceCommand) return;
+    /*if (!voiceCommand) return;*/
 
-    if (voiceCommand.includes('открыть')) {
+    /*if (voiceCommand.includes('открыть')) {
       const dateMatch = voiceCommand.match(/\d{1,2}\s?(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/i);
       if (dateMatch) {
         const [day, month] = dateMatch[0].split(' ');
@@ -44,8 +47,8 @@ const CalendarPage: React.FC = () => {
       }
     } else if (voiceCommand.includes('создать задачу')) {
       setOpenModal(true);
-    }
-  }, [voiceCommand]);
+    }*/
+  }/*, [voiceCommand]*/);
 
   const handleDateChange = (date: Date | null) => {
     if (date) setSelectedDate(date);
@@ -78,7 +81,7 @@ const CalendarPage: React.FC = () => {
         <Typography variant="h4" component="h1">
           Календарь задач
         </Typography>
-        <VoiceButton onClick={startVoice} />
+        {/*<VoiceButton onClick={startVoice} />*/}
       </Box>
 
       {error && (
@@ -101,12 +104,15 @@ const CalendarPage: React.FC = () => {
           p: 2,
           bgcolor: 'background.paper'
         }}>
-          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ru}>
+          <LocalizationProvider
+            dateAdapter={AdapterDateFns}
+            //adapterLocale={ru}
+          >
             <DateCalendar
               value={selectedDate}
               onChange={handleDateChange}
               views={['day', 'month']}
-              dayOfWeekFormatter={(day) => day.toUpperCase()}
+              dayOfWeekFormatter={(day: Date) => format(day, 'EEEEE', { locale: ru }).toUpperCase()}
               slots={{
                 day: (props) => (
                   <TaskCalendarDay 

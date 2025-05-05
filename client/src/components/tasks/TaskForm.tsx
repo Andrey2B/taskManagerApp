@@ -1,44 +1,36 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  Button, 
-  TextField, 
-  MenuItem, 
-  Grid,
+import React, { useState, useEffect } from 'react';
+import Grid from '@mui/material/Grid';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
+  MenuItem,
   FormControl,
   InputLabel,
   Select,
   Chip,
   Avatar,
   Typography,
-  Box
+  Box,
+  SelectChangeEvent,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import { Task, TaskPriority, TaskStatus } from '../../types/task';
 import { useProjects } from '../../hooks/useProjects';
-import { useUsers } from '../../hooks/useUsers';
-import { useVoice } from '../../hooks/useVoice';
-import VoiceButton from '../ui/VoiceButton';
-import { formatDate } from '../../utils/date';
+import { useProjectUsers } from '../../hooks/useProjectUsers';
+import { taskStatusOptions } from './TaskStatus';
 
 interface TaskFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (taskData: Partial<Task>) => void;
+  onSubmit: (taskData: Partial<Task>) => Promise<void>;
   initialData?: Partial<Task>;
 }
-
-const statusOptions: { value: TaskStatus; label: string }[] = [
-  { value: 'todo', label: 'To Do' },
-  { value: 'in-progress', label: 'In Progress' },
-  { value: 'done', label: 'Done' },
-  { value: 'blocked', label: 'Blocked' },
-];
 
 const priorityOptions: { value: TaskPriority; label: string }[] = [
   { value: 'low', label: 'Low' },
@@ -59,9 +51,15 @@ const validationSchema = yup.object({
 
 const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialData }) => {
   const { projects } = useProjects();
-  const { users } = useUsers();
-  const { voiceCommand, startVoice } = useVoice();
-  const [isVoiceActive, setIsVoiceActive] = useState(false);
+  const initialProjectId = initialData?.projectId || '';
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(initialProjectId);
+
+  const users = useProjectUsers(selectedProjectId);
+  const assignedUser =
+    users.find((u) => u.id === initialData?.assignedTo) ??
+    (initialData?.assignedTo
+      ? { id: initialData.assignedTo, name: 'Unknown User', avatar: '', role: 'unknown' }
+      : null);
 
   const formik = useFormik({
     initialValues: {
@@ -74,47 +72,38 @@ const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialDat
       assignedTo: initialData?.assignedTo || '',
     },
     validationSchema,
-    onSubmit: (values) => {
-      onSubmit({
-        ...values,
-        dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
-      });
-      onClose();
+    onSubmit: async (values) => {
+      try {
+        await onSubmit({
+          ...values,
+          dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
+        });
+        onClose();
+      } catch (error) {
+        console.error('Ошибка при отправке задачи:', error);
+      }
     },
     enableReinitialize: true,
   });
 
-  useEffect(() => {
-    if (!voiceCommand) return;
-
-    // Обработка голосовых команд
-    if (voiceCommand.includes('create task')) {
-      formik.setFieldValue('title', voiceCommand.replace('create task', '').trim());
-    } else if (voiceCommand.includes('priority')) {
-      const priority = voiceCommand.match(/high|medium|low|critical/i)?.[0].toLowerCase();
-      if (priority) formik.setFieldValue('priority', priority);
-    } else if (voiceCommand.includes('status')) {
-      const status = voiceCommand.match(/todo|in progress|done|blocked/i)?.[0].toLowerCase().replace(' ', '-');
-      if (status) formik.setFieldValue('status', status);
-    }
-  }, [voiceCommand]);
-
-  const handleVoiceInput = () => {
-    setIsVoiceActive(true);
-    startVoice();
+  const handleProjectChange = (event: SelectChangeEvent) => {
+    const projectId = event.target.value;
+    setSelectedProjectId(projectId);
+    formik.setFieldValue('projectId', projectId);
+    formik.setFieldValue('assignedTo', ''); // сброс назначенного пользователя при смене проекта
   };
+
+  useEffect(() => {
+    if (initialData?.projectId) {
+      setSelectedProjectId(initialData.projectId);
+    }
+  }, [initialData?.projectId]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>
         {initialData?.id ? 'Edit Task' : 'Create New Task'}
-        <Box sx={{ position: 'absolute', right: 8, top: 8 }}>
-          <VoiceButton 
-            active={isVoiceActive}
-            onClick={handleVoiceInput}
-            tooltip="Voice control"
-          />
-        </Box>
+        <Box sx={{ position: 'absolute', right: 8, top: 8 }} />
       </DialogTitle>
       <form onSubmit={formik.handleSubmit}>
         <DialogContent dividers>
@@ -156,13 +145,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialDat
                   id="projectId"
                   name="projectId"
                   value={formik.values.projectId}
-                  onChange={formik.handleChange}
+                  onChange={handleProjectChange}
                   error={formik.touched.projectId && Boolean(formik.errors.projectId)}
                   label="Project"
                 >
-                  {projects.map((project) => (
-                    <MenuItem key={project.id} value={project.id}>
-                      {project.name}
+                  {taskStatusOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                    {option.label}
                     </MenuItem>
                   ))}
                 </Select>
@@ -180,13 +169,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialDat
                   onChange={formik.handleChange}
                   label="Assign To"
                   renderValue={(selected) => {
-                    const user = users.find(u => u.id === selected);
+                    if (!selected) return 'None';
+                    const user = users.find((u) => u.id === selected) || assignedUser;
                     return user ? (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Avatar src={user.avatar} sx={{ width: 24, height: 24 }} />
                         <Typography>{user.name}</Typography>
                       </Box>
-                    ) : null;
+                    ) : 'Unknown';
                   }}
                 >
                   {users.map((user) => (
@@ -194,14 +184,14 @@ const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialDat
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Avatar src={user.avatar} sx={{ width: 24, height: 24 }} />
                         <Typography>{user.name}</Typography>
-                        <Chip 
-                          label={user.role} 
-                          size="small" 
-                          sx={{ 
+                        <Chip
+                          label={user.role}
+                          size="small"
+                          sx={{
                             ml: 'auto',
                             textTransform: 'capitalize',
-                            fontSize: '0.7rem'
-                          }} 
+                            fontSize: '0.7rem',
+                          }}
                         />
                       </Box>
                     </MenuItem>
@@ -222,7 +212,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialDat
                   error={formik.touched.status && Boolean(formik.errors.status)}
                   label="Status"
                 >
-                  {statusOptions.map((option) => (
+                  {taskStatusOptions.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
@@ -255,6 +245,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialDat
             <Grid item xs={12} md={4}>
               <DatePicker
                 label="Due Date"
+                format="DD.MM.YYYY"
                 value={formik.values.dueDate}
                 onChange={(date) => formik.setFieldValue('dueDate', date)}
                 slotProps={{
@@ -265,6 +256,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialDat
                   },
                 }}
               />
+              <Box mt={1}>
+                <Button size="small" onClick={() => formik.setFieldValue('dueDate', null)}>
+                  Clear Due Date
+                </Button>
+              </Box>
             </Grid>
           </Grid>
         </DialogContent>

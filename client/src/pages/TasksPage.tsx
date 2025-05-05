@@ -1,6 +1,8 @@
 // src/pages/TasksPage.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import WarningIcon from '@mui/icons-material/Warning';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
   Box,
   Container,
@@ -50,7 +52,7 @@ import {
 import { Task, TaskStatus, TaskPriority, TaskFilters, TaskWithUser } from '../types/task';
 import { useSnackbar } from 'notistack';
 import { formatDate, isOverdue } from '../utils/dateUtils';
-import { User } from '../types/user';
+import { User } from '../types/auth';
 
 // Константы для отображения
 const STATUS_CONFIG = {
@@ -86,14 +88,19 @@ export const TasksPage = () => {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        // Моковая реализация - замените на реальный запрос
-        const mockTasks: Task[] = [...];
-        const tasksWithUsers = await enrichTasksWithUsers(mockTasks);
+        // Запрос к API для получения задач
+        const response = await fetch('http://127.0.0.1:8000/api/tasks'); 
+        if (!response.ok) {
+          throw new Error('Не удалось загрузить задачи');
+        }
+        
+        const tasks: Task[] = await response.json(); // Преобразование ответа в массив задач
+        const tasksWithUsers = await enrichTasksWithUsers(tasks); // Обогащаем задачи данными пользователей
         setTasks(tasksWithUsers);
-        setLoading(false);
+        setLoading(false); // Завершаем загрузку
       } catch (error) {
-        enqueueSnackbar('Ошибка загрузки задач', { variant: 'error' });
-        setLoading(false);
+        enqueueSnackbar('Ошибка загрузки задач', { variant: 'error' }); // Показываем ошибку пользователю
+        setLoading(false); // Завершаем загрузку
       }
     };
 
@@ -109,12 +116,35 @@ export const TasksPage = () => {
     })));
   };
 
-  // Загрузка пользователя (заглушка)
+  // Загрузка пользователя c API
   const fetchUser = async (user: User | string): Promise<User> => {
-    if (typeof user !== 'string') return user;
-    // Здесь должен быть запрос к API/users/{id}
-    return { id: user, name: `Пользователь ${user}`, email: '', avatar: '' };
-  };
+  if (typeof user !== 'string') return user;
+
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/api/users/${user}`);
+    if (!response.ok) {
+      throw new Error('Ошибка загрузки пользователя');
+    }
+
+    const userData = await response.json();
+
+    // Предполагается, что API возвращает объект, который можно напрямую использовать в качестве User
+    return {
+      id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      avatar: userData.avatar,
+      role: userData.role,
+      createdAt: userData.createdAt,
+      updatedAt: userData.updatedAt,
+      token: userData.token
+    };
+  } catch (error) {
+    console.error(error);
+    throw new Error('Ошибка загрузки данных пользователя');
+  }
+};
+
 
   // Фильтрация и сортировка
   const filteredTasks = useMemo(() => {
@@ -144,11 +174,27 @@ export const TasksPage = () => {
       return true;
     }).sort((a, b) => {
       if (sortBy === 'dueDate') {
-        return new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime();
+        // Сортировка по сроку
+        const dateA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+        const dateB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+        return dateA - dateB;
+      
       }
-      // Сортировка по приоритету (critical > high > medium > low)
-      const priorityOrder = ['critical', 'high', 'medium', 'low'];
-      return priorityOrder.indexOf(a.priority) - priorityOrder.indexOf(b.priority);
+
+      if (sortBy === 'priority') {
+        // Сортировка по приоритету (critical > high > medium > low)
+        const priorityOrder = ['critical', 'high', 'medium', 'low'];
+        return priorityOrder.indexOf(a.priority) - priorityOrder.indexOf(b.priority);
+      }
+
+      if (sortBy === 'createdAt') {
+        // Сортировка по дате создания задачи, если указано
+        const createdAtA = new Date(a.createdAt || 0).getTime();
+        const createdAtB = new Date(b.createdAt || 0).getTime();
+        return createdAtA - createdAtB;
+      }
+
+      return 0; // Если сортировка не задана, не меняем порядок
     });
   }, [tasks, filters, searchQuery, sortBy]);
 
@@ -156,6 +202,7 @@ export const TasksPage = () => {
   const handleStatusChange = (newStatus: TaskStatus) => {
     if (!selectedTask) return;
     
+    // Обновление статуса задачи
     setTasks(tasks.map(task => 
       task.id === selectedTask ? { 
         ...task, 
@@ -163,8 +210,24 @@ export const TasksPage = () => {
         updatedAt: new Date().toISOString() 
       } : task
     ));
+
+    // Уведомление о обноалении статуса
     enqueueSnackbar(`Статус изменен на "${STATUS_CONFIG[newStatus].label}"`, { variant: 'success' });
     setAnchorEl(null);
+  };
+
+  // Обработчик выбора задачи для изменения статуса
+    const handleTaskSelect = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      setSelectedTask(task.id);
+      setAnchorEl(null); // Закрыть меню, если оно открыто
+    }
+  };
+
+  // Обработчик фильтрации задач по сроку
+  const isOverdue = (dueDate: string) => {
+    return new Date(dueDate) < new Date();
   };
 
   const handleDeleteTask = () => {
@@ -375,13 +438,13 @@ export const TasksPage = () => {
                         
                         <Chip
                           icon={<CommentIcon />}
-                          label={task.comments.length}
+                          label={(task.comments ?? []).length}
                           size="small"
                         />
                         
                         <Chip
                           icon={<AttachmentIcon />}
-                          label={task.attachments.length}
+                          label={(task.attachments ?? []).length}
                           size="small"
                         />
                         
@@ -424,7 +487,7 @@ export const TasksPage = () => {
           <MenuItem 
             key={status}
             onClick={() => handleStatusChange(status as TaskStatus)}
-            disabled={selectedTask && tasks.find(t => t.id === selectedTask)?.status === status}
+            disabled={!!(selectedTask && tasks.find(t => t.id === selectedTask)?.status === status)} 
           >
             <ListItemAvatar>
               <Avatar sx={{ 

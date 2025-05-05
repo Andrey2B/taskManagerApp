@@ -1,5 +1,9 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+
+export {};
+
+
+/*import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface VoiceContextType {
   isListening: boolean;
@@ -86,4 +90,4 @@ export const useVoice = () => {
     throw new Error('useVoice must be used within a VoiceProvider');
   }
   return context;
-};
+};*/

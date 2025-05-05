@@ -1,23 +1,28 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LoginForm, RegisterForm } from '../components/auth';
+import { LoginForm } from '../components/auth/LoginForm';
+import { RegisterForm } from '../components/auth/RegisterForm';
 import { Box, Button, Paper, Typography } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
-export const AuthPage = () => {
+export const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar(); // Инициализация Snackbar
 
-  // Функция, которая выполнится после успешного входа
   const handleAuthSuccess = () => {
-    navigate('/dashboard'); // Перенаправление после успешной аутентификации
-    // Можно добавить:
-    // - Загрузку данных пользователя
-    // - Обновление контекста авторизации
-    // - Показ уведомления
+    enqueueSnackbar('Успешный вход! Добро пожаловать 👋', { variant: 'success' });
+    navigate('/dashboard');
+  };
+  
+  const handleError = (error: any) => {
+    console.error('Ошибка авторизации:', error);
+    enqueueSnackbar('Ошибка входа: ' + error.message || 'Неверные данные', {
+      variant: 'error',
+    });
   };
 
   return (
-  
     <Box
       sx={{
         display: 'flex',
@@ -26,19 +31,23 @@ export const AuthPage = () => {
         minHeight: '100vh',
         bgcolor: 'background.default'
       }}
-     
     >
       <Paper elevation={3} sx={{ p: 4, width: 400 }}>
         <Typography variant="h5" align="center" sx={{ mb: 3 }}>
           {isLogin ? 'Вход в систему' : 'Регистрация'}
         </Typography>
+        
         {isLogin ? (
-          <LoginForm onSuccess={handleSuccess} />
+          <LoginForm 
+            onSuccess={handleAuthSuccess} 
+            onError={handleError} 
+          />
         ) : (
-          <RegisterForm onSuccess={handleSuccess} />
+          <RegisterForm 
+            onSuccess={handleAuthSuccess} 
+            onError={handleError} 
+          />
         )}
-        
-        
         <Button
           fullWidth
           color="secondary"

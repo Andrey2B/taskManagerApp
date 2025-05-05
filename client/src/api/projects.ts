@@ -1,31 +1,69 @@
 import axios from 'axios';
+import { CreateProjectData, Project, UpdateProjectData  } from '../types/project';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
 
+const axiosInstance = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Получить все проекты
 export const getProjects = async (token: string) => {
-  const response = await axios.get(`${API_URL}/projects`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.data;
+  try {
+    const response = await axiosInstance.get<Project[]>('/projects', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при получении проектов:', error);
+    throw new Error('Не удалось загрузить проекты');
+  };
 };
 
-export const createProject = async (projectData: any, token: string) => {
-  const response = await axios.post(`${API_URL}/projects`, projectData, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.data;
+// Создать новый проект
+export const createProject = async (
+  projectData: CreateProjectData, 
+  token: string
+): Promise<Project> => {
+  try {
+    const response = await axiosInstance.post<Project>('/projects', projectData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при создании проекта:', error);
+    throw new Error('Не удалось создать проект');
+  }
 };
 
-export const updateProject = async (id: string, projectData: any, token: string) => {
-  const response = await axios.put(`${API_URL}/projects/${id}`, projectData, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.data;
+// Обновить существующий проект
+export const updateProject = async (
+  id: string, 
+  projectData: UpdateProjectData,
+  token: string
+): Promise<Project> => {
+  try {
+    const response = await axiosInstance.put<Project>(`/projects/${id}`, projectData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Ошибка при обновлении проекта:', error);
+    throw new Error('Не удалось обновить проект');
+  }
 };
 
+//Удалить проект
 export const deleteProject = async (id: string, token: string) => {
-  const response = await axios.delete(`${API_URL}/projects/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.data;
+  try {
+    await axiosInstance.delete(`/projects/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch (error) {
+    console.error('Ошибка при удалении проекта:', error);
+    throw new Error('Не удалось удалить проект');
+  }
 };

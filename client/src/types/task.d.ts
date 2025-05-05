@@ -8,10 +8,10 @@ export interface Task {
   priority: TaskPriority;
   dueDate?: string;
   projectId: string;
-  assignedTo?: User | string; // string - когда приходит только ID
-  createdBy: User | string;
-  comments: TaskComment[];
-  attachments: Attachment[];
+  assignedTo?: UserOrString;
+  createdBy: UserOrString;
+  comments?: TaskComment[];
+  attachments?: Attachment[];
   createdAt: string;
   updatedAt: string;
 }
@@ -22,17 +22,25 @@ export type TaskPriority = 'low' | 'medium' | 'high' | 'critical';
 export interface TaskComment {
   id: string;
   text: string;
-  author: User;
+  author: UserOrString;
   createdAt: string;
 }
+
+export interface TaskWithUser extends Task {
+  assignedTo?: User;
+  createdBy: User;
+}
+
+
+export type UserOrString = User | string;
 
 export interface Attachment {
   id: string;
   name: string;
   url: string;
-  type: 'image' | 'document' | 'other';
-  size: number;
-  uploadedAt: string;
+  type?: 'image' | 'document' | 'other';
+  size?: number;
+  uploadedAt?: string;
 }
 
 export interface CreateTaskDto {

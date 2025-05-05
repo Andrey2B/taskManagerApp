@@ -1,17 +1,19 @@
 import { Box, Typography } from '@mui/material';
-import TaskList from '../../components/tasks/TaskList';
-import { useTasks } from '../../hooks/useTasks';
+import TaskCard from '../components/tasks/TaskCard';
+import { useTasks } from '../hooks/useTasks';
 
 const DashboardPage = () => {
   const { tasks, loading } = useTasks();
 
   return (
     <Box>
-      <Typography variant="h4">Мои задачи</Typography>
+      <Typography variant="h4" gutterBottom>Мои задачи</Typography>
       {loading ? (
-        <div>Загрузка...</div>
+        <Typography>Загрузка...</Typography>
       ) : (
-        <TaskList tasks={tasks} />
+        tasks.map((task) => (
+          <TaskCard key={task.id} task={task} />
+        ))
       )}
     </Box>
   );
