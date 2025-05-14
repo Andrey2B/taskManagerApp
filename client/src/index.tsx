@@ -12,6 +12,7 @@ import './assets/styles/global.css';
 // Импортируем AuthProvider
 import { AuthProvider } from './context/AuthContext';
 import { CustomThemeProvider } from './context/ThemeContext';
+import { ProjectProvider } from './context/ProjectContext';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -21,11 +22,14 @@ root.render(
   <React.StrictMode>
     <AuthProvider>
       <CustomThemeProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <ProjectProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </ProjectProvider>
       </CustomThemeProvider>
     </AuthProvider>
+
   </React.StrictMode>
 );
 

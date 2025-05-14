@@ -8,10 +8,10 @@ import { useSnackbar } from 'notistack';
 export const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar(); // Инициализация Snackbar
+  const { enqueueSnackbar } = useSnackbar();
 
   const handleAuthSuccess = () => {
-    enqueueSnackbar('Успешный вход! Добро пожаловать 👋', { variant: 'success' });
+    enqueueSnackbar('Успешный вход! Добро пожаловать', { variant: 'success' });
     navigate('/dashboard');
   };
   
