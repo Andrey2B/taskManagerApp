@@ -1,12 +1,17 @@
-import { PickersDay, PickersDayProps } from '@mui/x-date-pickers';
+import { PickersDay, PickersDayProps } from '@mui/x-date-pickers/PickersDay';
 import { Badge, Box } from '@mui/material';
 
-interface TaskCalendarDayProps extends PickersDayProps {
+// Используем Date как параметр типа:
+interface TaskCalendarDayProps extends PickersDayProps<Date> {
   tasksCount?: number;
   onCustomSelect?: (date: Date) => void;
 }
 
-const TaskCalendarDay: React.FC<TaskCalendarDayProps> = ({ tasksCount = 0, onCustomSelect, ...props }) => {
+const TaskCalendarDay: React.FC<TaskCalendarDayProps> = ({
+  tasksCount = 0,
+  onCustomSelect,
+  ...props
+}) => {
   const handleClick = () => {
     if (onCustomSelect) {
       onCustomSelect(props.day);

@@ -4,7 +4,7 @@ from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from . import crud, models, database
 
-SECRET_KEY = "your-secret-key"  # Замените на реальный ключ
+SECRET_KEY = "12341234"  
 ALGORITHM = "HS256"
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="users/login")

@@ -11,9 +11,6 @@ import CalendarTaskModal from '../components/calendar/CalendarTaskModal';
 
 import 'dayjs/locale/ru';
 
-//import { useVoice } from '../hooks/useVoice';
-//import VoiceButton from '../components/ui/VoiceButton';
-
 const CalendarPage: React.FC = () => {
   const theme = useTheme();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -21,34 +18,15 @@ const CalendarPage: React.FC = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const { tasks, loading, error } = useTasks();
-  //const { voiceCommand, startVoice } = useVoice();
 
-  // Фильтрация задач для выбранной даты
   useEffect(() => {
     if (tasks && selectedDate) {
-      const filtered = tasks.filter(task => 
+      const filtered = tasks.filter(task =>
         task.dueDate && isSameDay(parseISO(task.dueDate), selectedDate)
       );
       setSelectedTasks(filtered);
     }
   }, [tasks, selectedDate]);
-
-  // Обработка голосовых команд
-  useEffect(() => {
-    /*if (!voiceCommand) return;*/
-
-    /*if (voiceCommand.includes('открыть')) {
-      const dateMatch = voiceCommand.match(/\d{1,2}\s?(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)/i);
-      if (dateMatch) {
-        const [day, month] = dateMatch[0].split(' ');
-        const monthIndex = ru.localize.monthParse(month.toLowerCase())!;
-        const newDate = new Date(new Date().getFullYear(), monthIndex, parseInt(day));
-        setSelectedDate(newDate);
-      }
-    } else if (voiceCommand.includes('создать задачу')) {
-      setOpenModal(true);
-    }*/
-  }/*, [voiceCommand]*/);
 
   const handleDateChange = (date: Date | null) => {
     if (date) setSelectedDate(date);
@@ -65,23 +43,22 @@ const CalendarPage: React.FC = () => {
   };
 
   const getTasksForDay = (date: Date) => {
-    return tasks?.filter(task => 
+    return tasks?.filter(task =>
       task.dueDate && isSameDay(parseISO(task.dueDate), date)
     ).length || 0;
   };
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
         mb: 3
       }}>
         <Typography variant="h4" component="h1">
           Календарь задач
         </Typography>
-        {/*<VoiceButton onClick={startVoice} />*/}
       </Box>
 
       {error && (
@@ -90,13 +67,13 @@ const CalendarPage: React.FC = () => {
         </Typography>
       )}
 
-      <Box sx={{ 
-        display: 'flex', 
+      <Box sx={{
+        display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
         gap: 3
       }}>
         {/* Календарь */}
-        <Box sx={{ 
+        <Box sx={{
           flex: 1,
           maxWidth: { md: 400 },
           border: `1px solid ${theme.palette.divider}`,
@@ -106,18 +83,18 @@ const CalendarPage: React.FC = () => {
         }}>
           <LocalizationProvider
             dateAdapter={AdapterDateFns}
-            //adapterLocale={ru}
+            adapterLocale={ru}
           >
             <DateCalendar
               value={selectedDate}
               onChange={handleDateChange}
               views={['day', 'month']}
-              dayOfWeekFormatter={(day: Date) => format(day, 'EEEEE', { locale: ru }).toUpperCase()}
+              dayOfWeekFormatter={(day) => day.toUpperCase()}
               slots={{
                 day: (props) => (
-                  <TaskCalendarDay 
-                    {...props} 
-                    tasksCount={getTasksForDay(props.day)} 
+                  <TaskCalendarDay
+                    {...props}
+                    tasksCount={getTasksForDay(props.day)}
                   />
                 ),
               }}
@@ -126,7 +103,7 @@ const CalendarPage: React.FC = () => {
         </Box>
 
         {/* Список задач на выбранную дату */}
-        <Box sx={{ 
+        <Box sx={{
           flex: 2,
           border: `1px solid ${theme.palette.divider}`,
           borderRadius: 2,
@@ -159,18 +136,18 @@ const CalendarPage: React.FC = () => {
                     }
                   }}
                 >
-                  <Box sx={{ 
-                    display: 'flex', 
+                  <Box sx={{
+                    display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                   }}>
                     <Typography variant="subtitle1">{task.title}</Typography>
-                    <Chip 
-                      label={task.priority} 
+                    <Chip
+                      label={task.priority}
                       size="small"
                       color={
-                        task.priority === 'high' ? 'error' : 
-                        task.priority === 'medium' ? 'warning' : 'success'
+                        task.priority === 'high' ? 'error' :
+                          task.priority === 'medium' ? 'warning' : 'success'
                       }
                     />
                   </Box>
@@ -182,8 +159,8 @@ const CalendarPage: React.FC = () => {
             </Box>
           )}
 
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             sx={{ mt: 2 }}
             onClick={() => setOpenModal(true)}
           >
