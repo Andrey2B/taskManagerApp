@@ -22,7 +22,7 @@ export const RegisterForm = ({ onSuccess, onError }: RegisterFormProps) => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'user' // Роль по умолчанию
+
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -101,7 +101,7 @@ export const RegisterForm = ({ onSuccess, onError }: RegisterFormProps) => {
         sx={{ mb: 2 }}
         helperText="Минимум 6 символов, 1 цифра и 1 специальный символ"
         inputProps={{
-          pattern: "(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{6,})", 
+          pattern: "^(?=.*[0-9])(?=.*[!@#$%^&*]).{6,}$", 
           minLength: 6,
         }}
       />
@@ -117,6 +117,7 @@ export const RegisterForm = ({ onSuccess, onError }: RegisterFormProps) => {
         required
         sx={{ mb: 3 }}
       />
+      {/*
       <FormControl fullWidth sx={{ mb: 3 }}>
         <InputLabel>Роль</InputLabel>
         <Select
@@ -130,7 +131,7 @@ export const RegisterForm = ({ onSuccess, onError }: RegisterFormProps) => {
           <MenuItem value="manager">Менеджер</MenuItem>
           <MenuItem value="admin">Администратор</MenuItem>
         </Select>
-      </FormControl>
+      </FormControl>*/}
       {error && (
         <Typography color="error" sx={{ mb: 2 }}>
           {error}
