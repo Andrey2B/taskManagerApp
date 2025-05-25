@@ -1,13 +1,16 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 class UserCreate(BaseModel):
-    username: str
+    name: str  # Используем name вместо username
     email: str
     password: str
 
+    class Config:
+        orm_mode = True
+
 class UserLogin(BaseModel):
-    username: str
+    email: str  # Используем email для логина
     password: str
 
 class TaskCreate(BaseModel):
@@ -24,5 +27,5 @@ class RoleCreate(BaseModel):
     name: str
 
 class UserRole(BaseModel):
-    username: str
+    name: str
     role: str

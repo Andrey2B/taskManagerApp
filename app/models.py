@@ -3,10 +3,13 @@ from .database import Base
 
 class User(Base):
     __tablename__ = "users"
+
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
+    name = Column(String, index=True)  # Используем name вместо username
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
+    created_at = Column(String)
+    updated_at = Column(String)
 
 class Task(Base):
     __tablename__ = "tasks"
