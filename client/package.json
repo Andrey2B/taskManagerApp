@@ -33,7 +33,7 @@
     "yup": "1.6.1"
   },
   "devDependencies": {
-    "cross-env": "7.0.3"
+    "cross-env": "^7.0.3"
   },
   "scripts": {
     "start": "cross-env REACT_APP_API_URL=http://127.0.0.1:8000 react-scripts start",

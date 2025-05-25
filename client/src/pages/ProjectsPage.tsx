@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { Add, Search, FilterList } from '@mui/icons-material';
 import { Project } from '../types/project';
-import { getProjects } from '../api/projects'; // ← тут важно 'projects' (а не 'project')
+import { getProjects } from '../api/projects'; 
   
 export const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);

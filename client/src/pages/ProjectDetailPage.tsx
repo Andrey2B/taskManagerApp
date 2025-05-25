@@ -19,7 +19,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useProjectRoles } from '../hooks/useProjectRoles';
 
 export const ProjectDetailPage = () => {
-  const { projectId } = useParams<{ projectId: string }>();
+  // Обрати внимание: в App.tsx у тебя параметр называется ":id", а не ":projectId"
+  const { id: projectId } = useParams<{ id: string }>();  // <- Здесь "id", а не "projectId"
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const [project, setProject] = useState<Project | null>(null);
@@ -41,9 +42,13 @@ export const ProjectDetailPage = () => {
           await handleProjectLogin(user.id, projectId);
         }
 
+        // Получаем токен из localStorage и передаём в заголовках Authorization
+        const token = localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
         const [projectRes, tasksRes] = await Promise.all([
-          axios.get<Project>(`/api/projects/${projectId}`),
-          axios.get<Task[]>(`/api/projects/${projectId}/tasks`)
+          axios.get<Project>(`/api/projects/${projectId}`, { headers }),
+          axios.get<Task[]>(`/api/projects/${projectId}/tasks`, { headers })
         ]);
 
         setProject(projectRes.data);
@@ -68,7 +73,9 @@ export const ProjectDetailPage = () => {
 
   const handleDeleteProject = async () => {
     try {
-      await axios.delete(`/api/projects/${projectId}`);
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      await axios.delete(`/api/projects/${projectId}`, { headers });
       enqueueSnackbar('Проект удален', { variant: 'success' });
       navigate('/projects');
     } catch {
@@ -80,13 +87,15 @@ export const ProjectDetailPage = () => {
 
   const handleSaveProject = async () => {
     try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const updatedProject = {
         ...project,
         name: projectForm.name,
         description: projectForm.description
       };
 
-      await axios.put(`/api/projects/${projectId}`, updatedProject);
+      await axios.put(`/api/projects/${projectId}`, updatedProject, { headers });
       setProject(updatedProject as Project);
       enqueueSnackbar('Изменения сохранены', { variant: 'success' });
       setEditMode(false);

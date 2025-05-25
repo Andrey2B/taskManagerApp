@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box, Typography, CircularProgress } from '@mui/material';
-import { login } from '../../api/auth';
+import { login as apiLogin } from '../../api/auth';
+import { useAuth } from '../../context/AuthContext';
+import { User } from '../../types/auth';
 
 interface LoginFormProps {
-  onSuccess?: () => void; // Колбэк при успешном входе
+  onSuccess?: () => void;
   onError?: (error: string) => void;
 }
 
@@ -12,6 +14,8 @@ export const LoginForm = ({ onSuccess, onError }: LoginFormProps) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,24 +29,31 @@ export const LoginForm = ({ onSuccess, onError }: LoginFormProps) => {
     setError('');
 
     try {
-      const data = await login(email, password);
+      const data = await apiLogin(email, password);
 
       console.log('Данные пользователя:', data);
 
-    // Если сервер возвращает токен, сохраняем его
-    if (data.token) {
-      localStorage.setItem('token', data.token);
-    }
+  
+      if (data.token && data.user) {
+        const userWithToken: User = {
+          ...data.user,
+          token: data.token,
+        };
+  
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(userWithToken));
+  
+        login(userWithToken);
+      }
 
-    // Очистка полей после успешного входа
-    setEmail('');
-    setPassword('');
+      setEmail('');
+      setPassword('');
 
-      onSuccess?.(); // Вызываем onSuccess при успешном входе
+      onSuccess?.();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Ошибка входа';
       setError(message);
-      onError?.(message); // Вызываем onError при ошибке
+      onError?.(message);
     } finally {
       setIsLoading(false);
     }

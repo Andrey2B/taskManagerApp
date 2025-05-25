@@ -1,5 +1,4 @@
-// src/pages/SettingsPage.tsx
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Box,
   Tabs,
@@ -19,6 +18,7 @@ import {
   ListItemSecondaryAction,
   IconButton
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import {
   Person as PersonIcon,
   Notifications as NotificationsIcon,
@@ -29,17 +29,12 @@ import {
   Save as SaveIcon
 } from '@mui/icons-material';
 
-// Типы для TypeScript
 type TabPanelProps = {
   children?: React.ReactNode;
   index: number;
   value: number;
 };
 
-type Language = {
-  code: string;
-  name: string;
-};
 
 const TabPanel = (props: TabPanelProps) => {
   const { children, value, index, ...other } = props;
@@ -61,11 +56,52 @@ const TabPanel = (props: TabPanelProps) => {
   );
 };
 
+type Language = {
+  code: string;
+  name: string;
+};
+
 const languages: Language[] = [
   { code: 'en', name: 'English' },
   { code: 'ru', name: 'Русский' },
-  { code: 'es', name: 'Español' },
 ];
+
+// Загрузки аватара на сервер
+const uploadAvatar = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('avatar', file);
+
+  const response = await fetch('/api/upload-avatar', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error('Не удалось загрузить фотографию');
+  }
+
+  const data = await response.json();
+  return data.url;
+};
+
+// Функция проигрывания звука уведомления
+const playNotificationSound = () => {
+  const audio = new Audio('/notification-sound.mp3'); // путь к звуку
+  audio.play().catch(() => {
+    // Игнорируем ошибки воспроизведения
+  });
+};
+
+// Функция имитации отправки уведомления
+const sendNotification = (type: 'email' | 'push' | 'sounds') => {
+  if (type === 'email') {
+    alert('Отправлено Email уведомление');
+  } else if (type === 'push') {
+    alert('Отправлено Push уведомление');
+  } else if (type === 'sounds') {
+    playNotificationSound();
+  }
+};
 
 export const SettingsPage = () => {
   const [value, setValue] = useState(0);
@@ -86,28 +122,63 @@ export const SettingsPage = () => {
     passwordChanged: new Date(2023, 5, 15),
   });
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const { t } = useTranslation();
+
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setProfile(prev => ({ ...prev, [name]: value }));
+    setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleNotificationChange = (name: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNotifications(prev => ({ ...prev, [name]: e.target.checked }));
+  const handleNotificationChange = (name: keyof typeof notifications) => (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setNotifications((prev) => ({ ...prev, [name]: e.target.checked }));
+    sendNotification(name);
   };
 
-  const handleSaveProfile = () => {
-    setEditMode(false);
-    // Здесь будет логика сохранения на сервер
+  const handleSaveProfile = async () => {
+    setLoading(true);
+    setAvatarError(null);
+
+    try {
+      let avatarUrl = profile.avatar;
+
+      if (avatarFile) {
+        avatarUrl = await uploadAvatar(avatarFile);
+      }
+
+      setProfile((prev) => ({ ...prev, avatar: avatarUrl }));
+      setAvatarFile(null);
+      setEditMode(false);
+    } catch (error: any) {
+      setAvatarError(error.message || t('Не удалось загрузить фотографию'));
+    }
+
+    setLoading(false);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+    }
   };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Настройки
+      {t('settings')}
       </Typography>
 
       <Paper sx={{ display: 'flex', minHeight: '60vh' }}>
@@ -118,52 +189,62 @@ export const SettingsPage = () => {
           onChange={handleChange}
           sx={{ borderRight: 1, borderColor: 'divider', minWidth: 200 }}
         >
-          <Tab label="Профиль" icon={<PersonIcon />} iconPosition="start" />
-          <Tab label="Уведомления" icon={<NotificationsIcon />} iconPosition="start" />
-          <Tab label="Безопасность" icon={<SecurityIcon />} iconPosition="start" />
-          <Tab label="Язык" icon={<LanguageIcon />} iconPosition="start" />
+          <Tab label={t('profile')} icon={<PersonIcon />} iconPosition="start" />
+          <Tab label={t('notifications')} icon={<NotificationsIcon />} iconPosition="start" />
+          <Tab label={t('security')} icon={<SecurityIcon />} iconPosition="start" />
+          <Tab label={t('language')} icon={<LanguageIcon />} iconPosition="start" />
         </Tabs>
 
         <Box sx={{ flexGrow: 1 }}>
-          {/* Панель профиля */}
+          {/* Профиль */}
           <TabPanel value={value} index={0}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-              <Typography variant="h5">Профиль</Typography>
+              <Typography variant="h5">{t('profile')}</Typography>
               {editMode ? (
                 <Button
                   variant="contained"
                   startIcon={<SaveIcon />}
                   onClick={handleSaveProfile}
+                  disabled={loading}
                 >
-                  Сохранить
+                  {loading ? t('saving') : t('save')}
                 </Button>
               ) : (
-                <Button
-                  variant="outlined"
-                  startIcon={<EditIcon />}
-                  onClick={() => setEditMode(true)}
-                >
-                  Редактировать
+                <Button variant="outlined" startIcon={<EditIcon />} onClick={() => setEditMode(true)}>
+                  {t('edit')}
                 </Button>
               )}
             </Box>
 
-            <Box display="flex" alignItems="center" mb={4}>
-              <Avatar
-                src={profile.avatar}
-                sx={{ width: 80, height: 80, mr: 3 }}
-              />
-              {editMode && (
-                <Button variant="outlined" size="small">
-                  Изменить фото
-                </Button>
+            <Box display="flex" flexDirection="column" alignItems="flex-start" mb={4}>
+              <Box display="flex" alignItems="center" mb={1}>
+                <Avatar src={profile.avatar} sx={{ width: 80, height: 80, mr: 3 }} />
+                {editMode && (
+                  <>
+                    <Button variant="outlined" size="small" onClick={() => fileInputRef.current?.click()}>
+                      {t('changePhoto')}
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      ref={fileInputRef}
+                      style={{ display: 'none' }}
+                      onChange={handleAvatarChange}
+                    />
+                  </>
+                )}
+              </Box>
+              {avatarError && (
+                <Typography color="error" variant="body2" sx={{ ml: 10 }}>
+                  {avatarError}
+                </Typography>
               )}
             </Box>
 
             <Box component="form" sx={{ maxWidth: 500 }}>
               <TextField
                 fullWidth
-                label="Имя"
+                label={t('name')}
                 name="name"
                 value={profile.name}
                 onChange={handleProfileChange}
@@ -172,7 +253,7 @@ export const SettingsPage = () => {
               />
               <TextField
                 fullWidth
-                label="Email"
+                label={t('email')}
                 name="email"
                 value={profile.email}
                 onChange={handleProfileChange}
@@ -182,17 +263,17 @@ export const SettingsPage = () => {
             </Box>
           </TabPanel>
 
-          {/* Панель уведомлений */}
+          {/* Уведомления */}
           <TabPanel value={value} index={1}>
             <Typography variant="h5" gutterBottom>
-              Настройки уведомлений
+              {t('notificationSettings')}
             </Typography>
-            
+
             <List>
               <ListItem>
                 <ListItemText
-                  primary="Email уведомления"
-                  secondary="Получать важные уведомления на email"
+                  primary={t('emailNotifications')}
+                  secondary={t('emailNotificationsDescription')}
                 />
                 <ListItemSecondaryAction>
                   <Switch
@@ -202,13 +283,11 @@ export const SettingsPage = () => {
                   />
                 </ListItemSecondaryAction>
               </ListItem>
-              
               <Divider />
-              
               <ListItem>
                 <ListItemText
-                  primary="Push уведомления"
-                  secondary="Получать уведомления в браузере"
+                  primary={t('pushNotifications')}
+                  secondary={t('pushNotificationsDescription')}
                 />
                 <ListItemSecondaryAction>
                   <Switch
@@ -218,13 +297,11 @@ export const SettingsPage = () => {
                   />
                 </ListItemSecondaryAction>
               </ListItem>
-              
               <Divider />
-              
               <ListItem>
                 <ListItemText
-                  primary="Звуковые уведомления"
-                  secondary="Проигрывать звук при получении уведомлений"
+                  primary={t('soundNotifications')}
+                  secondary={t('soundNotificationsDescription')}
                 />
                 <ListItemSecondaryAction>
                   <Switch
@@ -237,86 +314,51 @@ export const SettingsPage = () => {
             </List>
           </TabPanel>
 
-          {/* Панель безопасности */}
+          {/* Безопасность */}
           <TabPanel value={value} index={2}>
             <Typography variant="h5" gutterBottom>
-              Безопасность
+              {t('security')}
             </Typography>
-            
-            <List>
-              <ListItem>
-                <ListItemText
-                  primary="Двухфакторная аутентификация"
-                  secondary="Дополнительная защита вашего аккаунта"
-                />
-                <ListItemSecondaryAction>
-                  <Switch
-                    edge="end"
-                    checked={security.twoFactorAuth}
-                    onChange={() => setSecurity(prev => ({
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={security.twoFactorAuth}
+                  onChange={() =>
+                    setSecurity((prev) => ({
                       ...prev,
-                      twoFactorAuth: !prev.twoFactorAuth
-                    }))}
-                  />
-                </ListItemSecondaryAction>
-              </ListItem>
-              
-              <Divider />
-              
-              <ListItem>
-                <ListItemText
-                  primary="Смена пароля"
-                  secondary={`Последняя смена: ${security.passwordChanged.toLocaleDateString()}`}
+                      twoFactorAuth: !prev.twoFactorAuth,
+                    }))
+                  }
                 />
-                <ListItemSecondaryAction>
-                  <Button variant="outlined" size="small">
-                    Изменить пароль
-                  </Button>
-                </ListItemSecondaryAction>
-              </ListItem>
-            </List>
+              }
+              label={t('twoFactorAuth')}
+            />
+            <Typography variant="body2" color="textSecondary" mt={2}>
+              {t('passwordChanged')}: {security.passwordChanged.toLocaleDateString()}
+            </Typography>
           </TabPanel>
 
-          {/* Панель языка */}
+          {/* Язык */}
           <TabPanel value={value} index={3}>
             <Typography variant="h5" gutterBottom>
-              Язык интерфейса
+              {t('language')}
             </Typography>
-            
+
             <List>
-              {languages.map((language) => (
-                <React.Fragment key={language.code}>
-                  <ListItem 
-                    button 
-                    onClick={() => setSelectedLanguage(language.code)}
-                  >
-                    <ListItemText primary={language.name} />
-                    {selectedLanguage === language.code && (
-                      <ListItemSecondaryAction>
-                        <IconButton edge="end" disabled>
-                          <LanguageIcon color="primary" />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    )}
-                  </ListItem>
-                  <Divider />
-                </React.Fragment>
+              {languages.map((lang) => (
+                <ListItem
+                  button
+                  key={lang.code}
+                  selected={selectedLanguage === lang.code}
+                  onClick={() => setSelectedLanguage(lang.code)}
+                >
+                  <ListItemText primary={lang.name} />
+                </ListItem>
               ))}
             </List>
           </TabPanel>
         </Box>
       </Paper>
-
-      <Box mt={4} display="flex" justifyContent="flex-end">
-        <Button
-          variant="outlined"
-          color="error"
-          startIcon={<LogoutIcon />}
-          onClick={() => console.log('Logout')} // Замените на реальный logout
-        >
-          Выйти из аккаунта
-        </Button>
-      </Box>
     </Container>
   );
 };
