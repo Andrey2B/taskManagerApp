@@ -36,8 +36,6 @@ i18n
           changePassword: 'Change Password',
           lastChanged: 'Last changed',
           change: 'Change',
-          PhotoFailed: 'Photo upload failed',
-
         },
       },
       ru: {
@@ -66,8 +64,6 @@ i18n
           changePassword: 'Сменить пароль',
           lastChanged: 'Последнее изменение',
           change: 'Сменить',
-          PhotoFailed: 'Не удалось загрузить фотографию',
-    
         },
       },
     },

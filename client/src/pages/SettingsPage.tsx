@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Tabs,
@@ -16,9 +16,10 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  IconButton
+  IconButton,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import {
   Person as PersonIcon,
   Notifications as NotificationsIcon,
@@ -26,7 +27,7 @@ import {
   Language as LanguageIcon,
   Logout as LogoutIcon,
   Edit as EditIcon,
-  Save as SaveIcon
+  Save as SaveIcon,
 } from '@mui/icons-material';
 
 type TabPanelProps = {
@@ -34,7 +35,6 @@ type TabPanelProps = {
   index: number;
   value: number;
 };
-
 
 const TabPanel = (props: TabPanelProps) => {
   const { children, value, index, ...other } = props;
@@ -47,11 +47,7 @@ const TabPanel = (props: TabPanelProps) => {
       aria-labelledby={`vertical-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          <Typography>{children}</Typography>
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 };
@@ -66,7 +62,7 @@ const languages: Language[] = [
   { code: 'ru', name: 'Русский' },
 ];
 
-// Загрузки аватара на сервер
+// Реальная функция загрузки аватара на сервер
 const uploadAvatar = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('avatar', file);
@@ -81,7 +77,7 @@ const uploadAvatar = async (file: File): Promise<string> => {
   }
 
   const data = await response.json();
-  return data.url;
+  return data.url; // ожидаем, что сервер вернёт { url: string }
 };
 
 // Функция проигрывания звука уведомления
@@ -104,6 +100,8 @@ const sendNotification = (type: 'email' | 'push' | 'sounds') => {
 };
 
 export const SettingsPage = () => {
+  const { t } = useTranslation();
+
   const [value, setValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
   const [profile, setProfile] = useState({
@@ -116,7 +114,7 @@ export const SettingsPage = () => {
     push: false,
     sounds: true,
   });
-  const [selectedLanguage, setSelectedLanguage] = useState('ru');
+  const [selectedLanguage, setSelectedLanguage] = useState(i18n.language || 'ru');
   const [security, setSecurity] = useState({
     twoFactorAuth: false,
     passwordChanged: new Date(2023, 5, 15),
@@ -124,12 +122,9 @@ export const SettingsPage = () => {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { t } = useTranslation();
-
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
@@ -172,13 +167,23 @@ export const SettingsPage = () => {
     const file = e.target.files?.[0];
     if (file) {
       setAvatarFile(file);
+      setAvatarError(null);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfile((prev) => ({ ...prev, avatar: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
     }
   };
+
+  useEffect(() => {
+    i18n.changeLanguage(selectedLanguage);
+  }, [selectedLanguage]);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-      {t('settings')}
+        {t('settings')}
       </Typography>
 
       <Paper sx={{ display: 'flex', minHeight: '60vh' }}>
@@ -195,7 +200,7 @@ export const SettingsPage = () => {
           <Tab label={t('language')} icon={<LanguageIcon />} iconPosition="start" />
         </Tabs>
 
-        <Box sx={{ flexGrow: 1 }}>
+        <Box sx={{ flexGrow: 1 }} key={selectedLanguage}>
           {/* Профиль */}
           <TabPanel value={value} index={0}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>

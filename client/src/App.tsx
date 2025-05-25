@@ -39,6 +39,7 @@ const App: React.FC = () => {
         <Routes>
           {/* Публичная страница */}
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
 
           {/* Защищённые маршруты */}
           <Route element={<ProtectedRoute />}>

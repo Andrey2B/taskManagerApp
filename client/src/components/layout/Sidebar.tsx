@@ -1,37 +1,35 @@
 import React from 'react';
-import { 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemIcon, 
-  ListItemText, 
-  Divider, 
-  Toolbar, 
+import {
+  Drawer,
+  List,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Toolbar,
   ListItemButton,
   useMediaQuery,
   useTheme as useMuiTheme,
- } from '@mui/material';
-import { 
+} from '@mui/material';
+import {
   Dashboard as DashboardIcon,
   Folder as ProjectsIcon,
   Assignment as TasksIcon,
   CalendarToday as CalendarIcon,
   Notifications as NotificationsIcon,
-  Settings as SettingsIcon 
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
-import { Link, useLocation } from 'react-router-dom';
-import { useTheme } from  '../../context/ThemeContext';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useTheme } from '../../context/ThemeContext';
 
-// Константа ширины сайдбара
 const drawerWidth = 240;
 
 const Sidebar: React.FC = () => {
-  const { theme } = useTheme(); // Используем хук из ThemeContext
-  const location = useLocation();
-
-  // Адаптивный брейкпоинт MUI для мобильных экранов
+  const { theme } = useTheme();
   const muiTheme = useMuiTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
+
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
@@ -42,9 +40,15 @@ const Sidebar: React.FC = () => {
     { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
 
+  const handleNavigation = (path: string) => {
+    if (location.pathname !== path) {
+      navigate(path);
+    }
+  };
+
   return (
     <Drawer
-      variant={isMobile ? 'temporary' : 'permanent'} // временный на мобилках, постоянный на десктопах
+      variant={isMobile ? 'temporary' : 'permanent'}
       open={!isMobile}
       sx={{
         width: drawerWidth,
@@ -53,18 +57,18 @@ const Sidebar: React.FC = () => {
           width: drawerWidth,
           boxSizing: 'border-box',
           backgroundColor: theme === 'light' ? '#fff' : '#333',
+          color: theme === 'light' ? '#000' : '#fff',
         },
       }}
     >
-      <Toolbar /> {/* отступ под Header */}
+      <Toolbar />
 
       <List>
         {menuItems.map((item) => (
           <ListItemButton
             key={item.text}
-            component={Link}
-            to={item.path}
-            selected={location.pathname.startsWith(item.path)} // выделение по вложенным страницам
+            selected={location.pathname.startsWith(item.path)}
+            onClick={() => handleNavigation(item.path)}
             sx={{
               '&.Mui-selected': {
                 backgroundColor: theme === 'light' ? '#e0e0e0' : '#555',
@@ -82,16 +86,6 @@ const Sidebar: React.FC = () => {
 
       <Divider sx={{ my: 1 }} />
 
-      {/* Блок для будущих дополнительных элементов или виджетов */}
-      <List>
-        <ListItem>
-          <ListItemText
-            primary="SberBox"
-            secondary="Voice control enabled"
-            secondaryTypographyProps={{ color: 'primary' }}
-          />
-        </ListItem>
-      </List>
     </Drawer>
   );
 };
