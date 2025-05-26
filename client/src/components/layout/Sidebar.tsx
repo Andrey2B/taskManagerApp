@@ -13,8 +13,6 @@ import {
 import {
   Dashboard as DashboardIcon,
   Folder as ProjectsIcon,
-  Assignment as TasksIcon,
-  CalendarToday as CalendarIcon,
   Notifications as NotificationsIcon,
   Settings as SettingsIcon,
 } from '@mui/icons-material';
@@ -31,11 +29,10 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Показываем только основные пункты меню
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'Projects', icon: <ProjectsIcon />, path: '/projects' },
-    { text: 'Tasks', icon: <TasksIcon />, path: '/tasks' },
-    { text: 'Calendar', icon: <CalendarIcon />, path: '/calendar' },
     { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
     { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
   ];
@@ -67,7 +64,7 @@ const Sidebar: React.FC = () => {
         {menuItems.map((item) => (
           <ListItemButton
             key={item.text}
-            selected={location.pathname.startsWith(item.path)}
+            selected={location.pathname === item.path || location.pathname.startsWith(item.path + '/')}
             onClick={() => handleNavigation(item.path)}
             sx={{
               '&.Mui-selected': {
@@ -85,7 +82,6 @@ const Sidebar: React.FC = () => {
       </List>
 
       <Divider sx={{ my: 1 }} />
-
     </Drawer>
   );
 };

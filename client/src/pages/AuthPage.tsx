@@ -12,7 +12,7 @@ export const AuthPage: React.FC = () => {
 
   const handleAuthSuccess = () => {
     enqueueSnackbar('Успешный вход! Добро пожаловать', { variant: 'success' });
-    navigate('/projects');
+    navigate('/');
     console.log('handleAuthSuccess вызван');
   };
   

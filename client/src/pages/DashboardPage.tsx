@@ -1,24 +1,26 @@
 import { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Stack } from '@mui/material';
 import TaskCard from '../components/tasks/TaskCard';
 import { Task } from '../types/task';
 import { useAuth } from '../context/AuthContext';
 
 const DashboardPage = () => {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        if (!token) {
-          setError('Вы не авторизованы');
-          setLoading(false);
-          return;
-        }
+    if (!token) {
+      setError('Вы не авторизованы');
+      setLoading(false);
+      return;
+    }
 
+    const fetchTasks = async () => {
+      setLoading(true);
+      setError(null);
+      try {
         const response = await fetch('/api/tasks', {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -42,19 +44,29 @@ const DashboardPage = () => {
   }, [token]);
 
   return (
-    <Box>
+    <Box p={3}>
       <Typography variant="h4" gutterBottom>
         Мои задачи
       </Typography>
 
-      {loading ? (
-        <CircularProgress />
-      ) : error ? (
-        <Alert severity="error">{error}</Alert>
-      ) : tasks.length === 0 ? (
+      {loading && (
+        <Box display="flex" justifyContent="center" my={4}>
+          <CircularProgress />
+        </Box>
+      )}
+
+      {error && <Alert severity="error">{error}</Alert>}
+
+      {!loading && !error && tasks.length === 0 && (
         <Typography>У вас пока нет задач.</Typography>
-      ) : (
-        tasks.map((task) => <TaskCard key={task.id} task={task} />)
+      )}
+
+      {!loading && !error && tasks.length > 0 && (
+        <Stack spacing={2} mt={2}>
+          {tasks.map((task) => (
+            <TaskCard key={task.id} task={task} />
+          ))}
+        </Stack>
       )}
     </Box>
   );

@@ -5,11 +5,19 @@ export interface Project {
   name: string;
   description: string;
   status: ProjectStatus;
-  members: ProjectMember[]; // Список пользователей и их ролей в проекте
+  members: ProjectMember[];
   createdAt: string;
   updatedAt?: string;
   createdBy: string;
 }
+
+export type ProjectStatus =
+  | 'planning'     // Планируется
+  | 'active'       // В работе
+  | 'on-hold'      // Приостановлен
+  | 'completed'    // Завершён
+  | 'archived'     // Архив
+  | 'cancelled';   // Отменён
 
 interface ProjectUser {
   userId: string;
@@ -27,6 +35,8 @@ export type ProjectRole =
 export interface CreateProjectData {
   name: string;
   description?: string;
+  status: ProjectStatus;
+  role: ProjectRole;
 }
 
 export interface UpdateProjectData {
@@ -38,8 +48,8 @@ export interface UpdateProjectData {
 export type ProjectStatus = 'active' | 'archived' | 'completed';
 
 export interface ProjectMember {
-  id: string;  // Убедитесь, что это поле есть
-  user: User | string; // string - когда приходит только ID
+  id: string;
+  user: User | string;
   role: ProjectRole;
   name?: string;
 }

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react'; 
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Layout from './components/layout/Layout';
@@ -16,6 +16,7 @@ import TaskForm from './components/tasks/TaskForm';
 import { Task } from './types/task';
 import { AuthProvider } from './context/AuthContext';
 import { CustomThemeProvider } from './context/ThemeContext';
+import { NewProjectPage } from './pages/NewProjectPage';
 
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -39,33 +40,40 @@ const App: React.FC = () => {
         <Routes>
           {/* Публичная страница */}
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
 
           {/* Защищённые маршруты */}
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout onSuccess={handleAuthSuccess} />}>
               <Route index element={<DashboardPage />} />
+
               <Route path="projects">
                 <Route index element={<ProjectsPage />} />
-                <Route path=":id" element={<ProjectDetailPage />} />
+                <Route path="new" element={<NewProjectPage />} />
+                <Route path=":id">
+                  {/* Страница проекта */}
+                  <Route index element={<ProjectDetailPage />} />
+                  {/* Создание задачи внутри проекта */}
+                  <Route
+                    path="new-task"
+                    element={
+                      <TaskForm
+                        open={isTaskFormOpen}
+                        onClose={handleCloseTaskForm}
+                        onSubmit={handleSubmitTaskForm}
+                      />
+                    }
+                  />
+                </Route>
               </Route>
+
               <Route path="tasks">
                 <Route index element={<TasksPage />} />
                 <Route path=":id" element={<TaskDetailPage />} />
               </Route>
+
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="settings" element={<SettingsPage />} />
-              <Route
-                path="projects/:id/new-task"
-                element={
-                  <TaskForm
-                    open={isTaskFormOpen}
-                    onClose={handleCloseTaskForm}
-                    onSubmit={handleSubmitTaskForm}
-                  />
-                }
-              />
             </Route>
           </Route>
 

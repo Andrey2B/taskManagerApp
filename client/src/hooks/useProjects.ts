@@ -7,7 +7,7 @@ import {
   deleteProject 
 } from '../api/projects';
 import { User } from '../types/auth';
-import { Project } from '../types/project';
+import { CreateProjectData, Project } from '../types/project';
  
 
 
@@ -42,22 +42,29 @@ export const useProjects = () => {
   };
 
   // Добавление нового проекта
-  const addProject = async (
-    projectData: Omit<Project, 'id'>, 
-    token: string
-  ): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const newProject = await createProject(projectData, token) as Project;
-      setProjects(prev => [...prev, newProject]);
-    } catch (err) {
-      handleError(err, 'Ошибка при создании проекта');
-    } finally {
-      setIsLoading(false);
-    }
+const addProject = async (
+  projectData: Omit<Project, 'id'>, 
+  token: string
+): Promise<void> => {
+  setIsLoading(true);
+  setError(null);
+
+  const projectDataForCreate: CreateProjectData = {
+    name: projectData.name,
+    description: projectData.description,
+    status: projectData.status || 'planning',
+    role: projectData.members?.[0]?.role || 'owner',
   };
+
+  try {
+    const newProject = await createProject(projectDataForCreate, token) as Project;
+    setProjects(prev => [...prev, newProject]);
+  } catch (err) {
+    handleError(err, 'Ошибка при создании проекта');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Редактирование проекта
   const editProject = async (

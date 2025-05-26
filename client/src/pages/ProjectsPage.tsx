@@ -15,14 +15,13 @@ import {
 import { Add, Search, FilterList } from '@mui/icons-material';
 import { Project } from '../types/project';
 import { getProjects } from '../api/projects'; 
-  
+
 export const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
-  // Загрузка проектов с сервера
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -45,7 +44,6 @@ export const ProjectsPage = () => {
     fetchProjects();
   }, []);
 
-  // Фильтрация проектов по поисковому запросу
   const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description.toLowerCase().includes(searchTerm.toLowerCase())
@@ -104,8 +102,12 @@ export const ProjectsPage = () => {
         />
       </Box>
 
-      {filteredProjects.length === 0 ? (
-        <Typography variant="body1" align="center">
+      {projects.length === 0 ? (
+        <Typography variant="body1" align="center" color="text.secondary" sx={{ mt: 4 }}>
+          Проектов пока нет (｡╯︵╰｡)
+        </Typography>
+      ) : filteredProjects.length === 0 ? (
+        <Typography variant="body1" align="center" color="text.secondary" sx={{ mt: 4 }}>
           Проекты не найдены
         </Typography>
       ) : (

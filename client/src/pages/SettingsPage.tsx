@@ -16,6 +16,10 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
@@ -91,7 +95,7 @@ const sendNotification = (type: 'email' | 'push' | 'sounds') => {
 
 export const SettingsPage = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate(); // 👈 хук навигации
+  const navigate = useNavigate();
 
   const [value, setValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
@@ -128,7 +132,10 @@ export const SettingsPage = () => {
   const handleNotificationChange = (name: keyof typeof notifications) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setNotifications((prev) => ({ ...prev, [name]: e.target.checked }));
+    const updatedValue = e.target.checked;
+    setNotifications((prev) => ({ ...prev, [name]: updatedValue }));
+  
+    console.log(`Настройка "${name}" изменена на`, updatedValue);
     sendNotification(name);
   };
 
@@ -163,6 +170,38 @@ export const SettingsPage = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: '',
+    newPassword: '',
+  });
+  const [sessions, setSessions] = useState([
+    { id: 1, device: 'Chrome на Windows', location: 'Москва', active: true },
+    { id: 2, device: 'Safari на iPhone', location: 'Санкт-Петербург', active: false },
+  ]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const handlePasswordChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleChangePassword = () => {
+    alert('Пароль изменён');
+    setSecurity((prev) => ({ ...prev, passwordChanged: new Date() }));
+    setPasswordData({ oldPassword: '', newPassword: '' });
+  };
+
+  const handleLogoutOtherSessions = () => {
+    alert('Выход из всех других сессий');
+    setSessions((prev) => prev.filter((s) => s.active));
+  };
+
+  const handleDeleteAccount = () => {
+    alert('Аккаунт удалён');
+    setDeleteDialogOpen(false);
+    navigate('/goodbye');
   };
 
   useEffect(() => {
@@ -316,15 +355,18 @@ export const SettingsPage = () => {
             <Typography variant="h5" gutterBottom>
               {t('security')}
             </Typography>
+
+            {/* 2FA */}
             <FormControlLabel
               control={
                 <Switch
                   checked={security.twoFactorAuth}
                   onChange={() =>
-                    setSecurity((prev) => ({
-                      ...prev,
-                      twoFactorAuth: !prev.twoFactorAuth,
-                    }))
+                    setSecurity((prev) => {
+                      const updated = !prev.twoFactorAuth;
+                      console.log('2FA изменено:', updated);
+                      return { ...prev, twoFactorAuth: updated };
+                    })
                   }
                 />
               }
@@ -333,7 +375,100 @@ export const SettingsPage = () => {
             <Typography variant="body2" color="textSecondary" mt={2}>
               {t('passwordChanged')}: {security.passwordChanged.toLocaleDateString()}
             </Typography>
-          </TabPanel>
+
+            <Divider sx={{ my: 3 }} />
+
+            {/* Смена пароля */}
+            <Typography variant="h6" gutterBottom>
+              {t('changePassword') || 'Сменить пароль'}
+            </Typography>
+            <TextField
+              label={t('oldPassword') || 'Старый пароль'}
+              type="password"
+              name="oldPassword"
+              fullWidth
+              margin="normal"
+              value={passwordData.oldPassword}
+              onChange={handlePasswordChangeInput}
+            />
+            <TextField
+              label={t('newPassword') || 'Новый пароль'}
+              type="password"
+              name="newPassword"
+              fullWidth
+              margin="normal"
+              value={passwordData.newPassword}
+              onChange={handlePasswordChangeInput}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleChangePassword}
+              sx={{ mt: 2 }}
+            >
+              {t('savePassword') || 'Сохранить пароль'}
+            </Button>
+
+            <Divider sx={{ my: 3 }} />
+
+            {/* Сессии */}
+            <Typography variant="h6" gutterBottom>
+              {t('activeSessions') || 'Активные сессии'}
+            </Typography>
+            <List dense>
+              {sessions.map((session) => (
+                <ListItem key={session.id}>
+                  <ListItemText
+                    primary={session.device}
+                    secondary={session.location + (session.active ? ' • Текущая' : '')}
+                  />
+                </ListItem>
+              ))}
+            </List>
+            <Button
+              variant="outlined"
+              color="warning"
+              onClick={handleLogoutOtherSessions}
+              sx={{ mt: 1 }}
+            >
+              {t('logoutOtherSessions') || 'Выйти из других сессий'}
+            </Button>
+
+            <Divider sx={{ my: 3 }} />
+
+            {/* Удаление аккаунта */}
+            <Typography variant="h6" gutterBottom color="error">
+              {t('deleteAccount') || 'Удалить аккаунт'}
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              {t('deleteAccountDesc') || 'Это действие нельзя отменить.'}
+            </Typography>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => setDeleteDialogOpen(true)}
+              sx={{ mt: 2 }}
+            >
+              {t('confirmDeleteAccount') || 'Удалить аккаунт'}
+            </Button>
+
+            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+              <DialogTitle>{t('confirmDeleteTitle') || 'Удаление аккаунта'}</DialogTitle>
+              <DialogContent>
+                <Typography>
+                  {t('confirmDeleteText') || 'Вы уверены, что хотите удалить аккаунт? Это действие необратимо.'}
+                </Typography>
+              </DialogContent>
+            <DialogActions>
+            <Button onClick={() => setDeleteDialogOpen(false)}>
+              {t('cancel') || 'Отмена'}
+            </Button>
+            <Button onClick={handleDeleteAccount} color="error">
+              {t('delete') || 'Удалить'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </TabPanel>
 
           {/* Язык */}
           <TabPanel value={value} index={3}>
