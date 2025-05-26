@@ -16,7 +16,6 @@ import {
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  IconButton,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
@@ -25,10 +24,10 @@ import {
   Notifications as NotificationsIcon,
   Security as SecurityIcon,
   Language as LanguageIcon,
-  Logout as LogoutIcon,
   Edit as EditIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom'; // 👈 добавлено
 
 type TabPanelProps = {
   children?: React.ReactNode;
@@ -36,21 +35,17 @@ type TabPanelProps = {
   value: number;
 };
 
-const TabPanel = (props: TabPanelProps) => {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`vertical-tabpanel-${index}`}
-      aria-labelledby={`vertical-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-};
+const TabPanel = ({ children, value, index, ...other }: TabPanelProps) => (
+  <div
+    role="tabpanel"
+    hidden={value !== index}
+    id={`vertical-tabpanel-${index}`}
+    aria-labelledby={`vertical-tab-${index}`}
+    {...other}
+  >
+    {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+  </div>
+);
 
 type Language = {
   code: string;
@@ -62,7 +57,6 @@ const languages: Language[] = [
   { code: 'ru', name: 'Русский' },
 ];
 
-// Реальная функция загрузки аватара на сервер
 const uploadAvatar = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('avatar', file);
@@ -77,18 +71,14 @@ const uploadAvatar = async (file: File): Promise<string> => {
   }
 
   const data = await response.json();
-  return data.url; // ожидаем, что сервер вернёт { url: string }
+  return data.url;
 };
 
-// Функция проигрывания звука уведомления
 const playNotificationSound = () => {
-  const audio = new Audio('/notification-sound.mp3'); // путь к звуку
-  audio.play().catch(() => {
-    // Игнорируем ошибки воспроизведения
-  });
+  const audio = new Audio('/notification-sound.mp3');
+  audio.play().catch(() => {});
 };
 
-// Функция имитации отправки уведомления
 const sendNotification = (type: 'email' | 'push' | 'sounds') => {
   if (type === 'email') {
     alert('Отправлено Email уведомление');
@@ -101,6 +91,7 @@ const sendNotification = (type: 'email' | 'push' | 'sounds') => {
 
 export const SettingsPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate(); // 👈 хук навигации
 
   const [value, setValue] = useState(0);
   const [editMode, setEditMode] = useState(false);
@@ -121,7 +112,6 @@ export const SettingsPage = () => {
   });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -148,7 +138,6 @@ export const SettingsPage = () => {
 
     try {
       let avatarUrl = profile.avatar;
-
       if (avatarFile) {
         avatarUrl = await uploadAvatar(avatarFile);
       }
@@ -182,6 +171,10 @@ export const SettingsPage = () => {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Button variant="text" onClick={() => navigate(-1)} sx={{ mb: 2 }}>
+        ← {t('back') || 'Назад'}
+      </Button>
+
       <Typography variant="h4" component="h1" gutterBottom>
         {t('settings')}
       </Typography>
@@ -273,7 +266,6 @@ export const SettingsPage = () => {
             <Typography variant="h5" gutterBottom>
               {t('notificationSettings')}
             </Typography>
-
             <List>
               <ListItem>
                 <ListItemText
@@ -348,7 +340,6 @@ export const SettingsPage = () => {
             <Typography variant="h5" gutterBottom>
               {t('language')}
             </Typography>
-
             <List>
               {languages.map((lang) => (
                 <ListItem
