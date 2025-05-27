@@ -29,12 +29,11 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Показываем только основные пункты меню
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Projects', icon: <ProjectsIcon />, path: '/projects' },
-    { text: 'Notifications', icon: <NotificationsIcon />, path: '/notifications' },
-    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+    { text: 'Главная', icon: <DashboardIcon />, path: '/' },
+    { text: 'Проекты', icon: <ProjectsIcon />, path: '/projects' },
+    { text: 'Уведомления', icon: <NotificationsIcon />, path: '/notifications' },
+    { text: 'Настройки', icon: <SettingsIcon />, path: '/settings' },
   ];
 
   const handleNavigation = (path: string) => {

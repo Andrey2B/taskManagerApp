@@ -112,7 +112,6 @@ export const SettingsPage = () => {
   const [selectedLanguage, setSelectedLanguage] = useState(i18n.language || 'ru');
   const [security, setSecurity] = useState({
     twoFactorAuth: false,
-    passwordChanged: new Date(2023, 5, 15),
   });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -124,11 +123,13 @@ export const SettingsPage = () => {
     setValue(newValue);
   };
 
+  // Обработчик изменения в поле имени
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
+  
   const handleNotificationChange = (name: keyof typeof notifications) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -140,6 +141,7 @@ export const SettingsPage = () => {
   };
 
   const handleSaveProfile = async () => {
+
     setLoading(true);
     setAvatarError(null);
 
@@ -175,7 +177,9 @@ export const SettingsPage = () => {
   const [passwordData, setPasswordData] = useState({
     oldPassword: '',
     newPassword: '',
+    confirmNewPassword: '',
   });
+  
   const [sessions, setSessions] = useState([
     { id: 1, device: 'Chrome на Windows', location: 'Москва', active: true },
     { id: 2, device: 'Safari на iPhone', location: 'Санкт-Петербург', active: false },
@@ -187,10 +191,58 @@ export const SettingsPage = () => {
     setPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleChangePassword = () => {
-    alert('Пароль изменён');
-    setSecurity((prev) => ({ ...prev, passwordChanged: new Date() }));
-    setPasswordData({ oldPassword: '', newPassword: '' });
+  const [loadingPassword, setLoadingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const [passwordChanged, setPasswordChanged] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (
+      !passwordData.oldPassword.trim() ||
+      !passwordData.newPassword.trim() ||
+      !passwordData.confirmNewPassword.trim()
+    ) {
+      setPasswordError(t('fillAllFields') || 'Пожалуйста, заполните все поля');
+      return;
+    }
+  
+    if (passwordData.newPassword !== passwordData.confirmNewPassword) {
+      setPasswordError(t('passwordsDontMatch') || 'Пароли не совпадают');
+      return;
+    } 
+
+    const passwordPattern = /^(?=.*[0-9])(?=.*[!@#$%^&*]).{6,}$/;
+    if (!passwordPattern.test(passwordData.newPassword)) {
+      setPasswordError(t('invalidPasswordFormat') || 'Новый пароль не соответствует требованиям');
+      return;
+    }
+  
+
+    setLoadingPassword(true);
+    setPasswordError(null);
+  
+    try {
+      const response = await fetch('/api/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          oldPassword: passwordData.oldPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        setPasswordError(errorData.message || 'Ошибка при смене пароля');
+      } else {
+        alert('Пароль успешно изменён');
+        setPasswordData({ oldPassword: '', newPassword: '', confirmNewPassword: ''  });
+      }
+    } catch (error) {
+      setPasswordError('Ошибка соединения с сервером');
+    }
+  
+    setLoadingPassword(false);
   };
 
   const handleLogoutOtherSessions = () => {
@@ -356,25 +408,6 @@ export const SettingsPage = () => {
               {t('security')}
             </Typography>
 
-            {/* 2FA */}
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={security.twoFactorAuth}
-                  onChange={() =>
-                    setSecurity((prev) => {
-                      const updated = !prev.twoFactorAuth;
-                      console.log('2FA изменено:', updated);
-                      return { ...prev, twoFactorAuth: updated };
-                    })
-                  }
-                />
-              }
-              label={t('twoFactorAuth')}
-            />
-            <Typography variant="body2" color="textSecondary" mt={2}>
-              {t('passwordChanged')}: {security.passwordChanged.toLocaleDateString()}
-            </Typography>
 
             <Divider sx={{ my: 3 }} />
 
@@ -384,6 +417,8 @@ export const SettingsPage = () => {
             </Typography>
             <TextField
               label={t('oldPassword') || 'Старый пароль'}
+              placeholder="Введите текущий пароль"
+              helperText="Это необходимо для подтверждения вашей личности"
               type="password"
               name="oldPassword"
               fullWidth
@@ -399,6 +434,30 @@ export const SettingsPage = () => {
               margin="normal"
               value={passwordData.newPassword}
               onChange={handlePasswordChangeInput}
+              helperText="Минимум 6 символов, 1 цифра и 1 специальный символ"
+              inputProps={{
+                pattern: '^(?=.*[0-9])(?=.*[!@#$%^&*]).{6,}$',
+                title: 'Пароль должен содержать минимум 6 символов, включая хотя бы 1 цифру и 1 специальный символ'
+              }}
+              error={
+                passwordData.newPassword.length > 0 &&
+                !/^(?=.*[0-9])(?=.*[!@#$%^&*]).{6,}$/.test(passwordData.newPassword)
+              }
+            />
+            <TextField
+              label={t('confirmNewPassword') || 'Подтвердите новый пароль'}
+              type="password"
+              name="confirmNewPassword"
+              fullWidth
+              margin="normal"
+              value={passwordData.confirmNewPassword}
+              onChange={handlePasswordChangeInput}
+              error={passwordData.confirmNewPassword !== passwordData.newPassword}
+              helperText={
+                passwordData.confirmNewPassword !== passwordData.newPassword
+                  ? t('passwordsDontMatch') || 'Пароли не совпадают'
+                  : ''
+              }
             />
             <Button
               variant="contained"
@@ -408,6 +467,11 @@ export const SettingsPage = () => {
             >
               {t('savePassword') || 'Сохранить пароль'}
             </Button>
+            {passwordChanged && (
+              <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
+                {t('passwordChangedSuccess') || 'Пароль успешно сохранён!'}
+              </Typography>
+            )}
 
             <Divider sx={{ my: 3 }} />
 
