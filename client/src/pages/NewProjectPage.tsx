@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Button, Container, TextField, Typography, MenuItem } from '@mui/material';
+import { useSnackbar } from 'notistack';
+import { useNavigate } from 'react-router-dom';
 import { createProject } from '../api/projects';
 import { ProjectRole, ProjectStatus, CreateProjectData } from '../types/project';
-import { useSnackbar } from 'notistack';
 
 const roles: ProjectRole[] = ['owner', 'developer', 'designer', 'manager', 'qa', 'analyst'];
 const statuses: ProjectStatus[] = ['planning', 'active', 'archived', 'completed'];
@@ -17,6 +18,7 @@ export const NewProjectPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; status?: string; role?: string }>({});
   const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
 
   const handleChange = (field: keyof CreateProjectData, value: string) => {
     setFormData(prev => ({
@@ -44,9 +46,11 @@ export const NewProjectPage: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token') || '';
-      await createProject(formData, token);
+      const createdProject = await createProject(formData, token);
+
       enqueueSnackbar('Проект успешно создан', { variant: 'success' });
-      // navigate('/projects');
+
+      navigate(`/projects/${createdProject.id}`);
     } catch (error: any) {
       console.error(error);
       enqueueSnackbar(error.message || 'Ошибка при создании проекта', { variant: 'error' });
