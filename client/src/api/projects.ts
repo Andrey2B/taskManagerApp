@@ -1,4 +1,5 @@
 import axios from 'axios';
+import {  User, RegisterData, LoginResponse } from '../types/auth';
 import { CreateProjectData, Project, UpdateProjectData  } from '../types/project';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
@@ -9,6 +10,21 @@ const axiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+export const getCurrentUser = async (): Promise<User> => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('Пользователь не авторизован');
+  }
+  const response = await axios.get(`${API_URL}/users/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,  // Убедитесь, что токен передается в заголовке
+    },
+  });
+
+  const user = response.data as User;
+  return user;
+};
 
 // Получить все проекты
 export const getProjects = async (token: string) => {

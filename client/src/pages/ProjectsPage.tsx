@@ -14,12 +14,14 @@ import {
 } from '@mui/material';
 import { Add, Search, FilterList } from '@mui/icons-material';
 import { Project } from '../types/project';
-import { getProjects } from '../api/projects'; 
+import { getProjects } from '../api/projects';
+import { getCurrentUser } from '../api/auth'; // Импортируем новый запрос
 
 export const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null); // Состояние для хранения информации о текущем пользователе
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,8 +34,13 @@ export const ProjectsPage = () => {
           return;
         }
 
+        // Получаем проекты с использованием токена
         const projectsFromServer = await getProjects(token);
         setProjects(projectsFromServer);
+
+        // Получаем информацию о текущем пользователе без передачи токена в функцию
+        const userFromServer = await getCurrentUser(); // getCurrentUser больше не принимает token как аргумент
+        setCurrentUser(userFromServer);
       } catch (error) {
         console.error('Ошибка загрузки проектов:', error);
       } finally {
@@ -55,6 +62,16 @@ export const ProjectsPage = () => {
 
   const handleProjectClick = (projectId: string) => {
     navigate(`/projects/${projectId}`);
+  };
+
+  const handleGetUserInfo = async () => {
+    try {
+      const user = await getCurrentUser(); // Получаем текущего пользователя
+      alert(`Текущий пользователь: ${user.name}, ${user.email}`);
+    } catch (error) {
+      console.error('Ошибка при получении информации о пользователе:', error);
+      alert('Не удалось получить информацию о пользователе');
+    }
   };
 
   if (loading) {
@@ -79,6 +96,27 @@ export const ProjectsPage = () => {
           Создать проект
         </Button>
       </Box>
+
+      {/* Кнопка для получения информации о текущем пользователе */}
+      <Box mb={4}>
+        <Button variant="outlined" onClick={handleGetUserInfo}>
+          Получить информацию о текущем пользователе
+        </Button>
+      </Box>
+
+      {currentUser && (
+        <Box mb={4}>
+          <Typography variant="h6">
+            Информация о пользователе:
+          </Typography>
+          <Typography variant="body1">
+            Имя: {currentUser.name}
+          </Typography>
+          <Typography variant="body1">
+            Email: {currentUser.email}
+          </Typography>
+        </Box>
+      )}
 
       <Box mb={4}>
         <TextField
@@ -114,8 +152,8 @@ export const ProjectsPage = () => {
         <Grid container spacing={3}>
           {filteredProjects.map((project) => (
             <Grid item xs={12} sm={6} md={4} key={project.id}>
-              <Card 
-                sx={{ 
+              <Card
+                sx={{
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
@@ -123,8 +161,8 @@ export const ProjectsPage = () => {
                   '&:hover': {
                     boxShadow: 3,
                     transform: 'translateY(-2px)',
-                    transition: 'all 0.3s ease'
-                  }
+                    transition: 'all 0.3s ease',
+                  },
                 }}
                 onClick={() => handleProjectClick(project.id)}
               >

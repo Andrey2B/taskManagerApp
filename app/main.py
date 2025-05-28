@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import users, tasks, roles, voice  # Импорт роутеров
+from app.routers import projects, users, tasks, roles, voice  # Импорт роутеров
 from app.database import engine
 from app import models
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,7 +9,7 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Task Manager App", description="API для управления задачами и ролями")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Можно указать конкретные URL
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -19,6 +19,7 @@ app.include_router(users.router)
 app.include_router(tasks.router)
 app.include_router(roles.router)
 app.include_router(voice.router)
+app.include_router(projects.router)
 
 @app.get("/")
 def read_root():

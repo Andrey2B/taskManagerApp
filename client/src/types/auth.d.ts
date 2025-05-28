@@ -1,17 +1,17 @@
 import { ProjectRole } from "./project";
 
 export interface User {
-    id: string;
-    name: string;
-    email: string;
-    role?: ProjectRole;
-    avatar?: string;
-    createdAt: string;
-    updatedAt: string;
-    token: string;
-  }
+    id: string;                // Уникальный идентификатор пользователя
+    name: string;              // Имя пользователя
+    email: string;             // Email пользователя
+    role?: ProjectRole;        // Роль пользователя в проекте (опционально)
+    avatar?: string;           // Аватар пользователя (опционально)
+    createdAt?: string;        // Дата создания пользователя (опционально)
+    updatedAt?: string;        // Дата обновления пользователя (опционально)
+    token: string;             // Токен доступа пользователя
+}
   
-  export interface LoginResponse {
+export interface LoginResponse {
     token: string;               // основной access-токен
     refreshToken?: string;       // рефреш-токен для продления сессии
     expiresIn: number;           // время жизни токена в секундах или миллисекундах
@@ -20,15 +20,15 @@ export interface User {
     message?: string;            // например, "Добро пожаловать"
   }
 
-  interface RegisterData {
+interface RegisterData {
     name: string;
     email: string;
     password: string;
   }
   
-  export type UserRole = 'admin' | 'manager' | 'member';
+export type UserRole = 'admin' | 'manager' | 'member';
   
-  export interface AuthResponse {
+export interface AuthResponse {
     token: string;
     user: User;
   }
@@ -44,7 +44,7 @@ export interface User {
   }
 
 
-  export const getUserName = (user: User | string) =>
+export const getUserName = (user: User | string) =>
     typeof user === 'string' ? 'Неизвестный пользователь' : user.name;
 
   export interface RegisterFormProps {
