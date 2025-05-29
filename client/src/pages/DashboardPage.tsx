@@ -21,7 +21,7 @@ const DashboardPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch('/api/tasks', {
+        const response = await fetch('/tasks', {
           headers: {
             Authorization: `Bearer ${token}`,
           },

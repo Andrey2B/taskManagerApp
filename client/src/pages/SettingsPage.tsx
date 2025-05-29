@@ -65,7 +65,7 @@ const uploadAvatar = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('avatar', file);
 
-  const response = await fetch('/api/upload-avatar', {
+  const response = await fetch('/upload-avatar', {
     method: 'POST',
     body: formData,
   });
@@ -222,7 +222,7 @@ export const SettingsPage = () => {
     setPasswordError(null);
   
     try {
-      const response = await fetch('/api/change-password', {
+      const response = await fetch('/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
