@@ -1,3 +1,4 @@
+import string
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -63,31 +64,53 @@ def get_project(
         raise HTTPException(status_code=404, detail="Проект не найден или доступ запрещён")
     return project
 
-# Получить участников проекта (с ролями)
+# Получить участников проекта с ролями
 @router.get("/{project_id}/users", response_model=List[schemas.UserRole])
 def get_project_users(
-    project_id: int,
+    project_id: str,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
+    # Получаем проект по строковому ID
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
 
     if not project:
         raise HTTPException(status_code=404, detail="Проект не найден")
 
-    # Допустим, все участники проекта могут видеть участников
-    # Если нужна строгая проверка владельца, раскомментируй:
-    # if current_user.id != project.owner_id:
-    #     raise HTTPException(status_code=403, detail="У вас нет прав доступа к этому проекту")
+    # Получаем участников проекта через промежуточную таблицу (project_user)
+    members_association = db.query(models.ProjectUser).filter(models.ProjectUser.project_id == project_id).all()
 
-    return [
-        schemas.UserRole(
-            id=member.id,
-            name=member.name,
-            avatar=member.avatar,
-            role=association.role
-        )
-        for member in project.members
-        for association in project.members_association
-        if association.user_id == member.id
-    ]
+    # Формируем список пользователей с их ролями
+    users_with_roles = []
+    for association in members_association:
+        user = db.query(models.User).filter(models.User.id == association.user_id).first()
+        if user:
+            users_with_roles.append(
+                schemas.UserRole(
+                    id=user.id,
+                    name=user.name,
+                    avatar=user.avatar,
+                    role=association.role  # Роль из таблицы ProjectUser
+                )
+            )
+
+    return users_with_roles
+
+@router.get("/{project_id}/tasks", response_model=List[schemas.TaskOut])
+def get_project_tasks(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    # Получаем проект
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Проект не найден")
+
+    # Проверяем права доступа (если необходимо)
+    if current_user.id != project.owner_id:
+        raise HTTPException(status_code=403, detail="У вас нет прав доступа к этому проекту")
+
+    # Получаем все задачи проекта
+    tasks = db.query(models.Task).filter(models.Task.project_id == project_id).all()
+    return tasks

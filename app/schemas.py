@@ -3,7 +3,6 @@ from typing import Optional, List
 from datetime import datetime
 
 # --- Пользователи ---
-
 class UserCreate(BaseModel):
     name: str
     email: EmailStr
@@ -20,12 +19,12 @@ class UserOut(BaseModel):
     id: int
     name: str
     email: EmailStr
+    avatar: Optional[str] = None
 
     class Config:
         orm_mode = True
 
 # --- Проекты ---
-
 class ProjectBase(BaseModel):
     name: str
     description: Optional[str] = None
@@ -47,7 +46,6 @@ class ProjectOut(ProjectBase):
         orm_mode = True
 
 # --- Задачи ---
-
 class TaskBase(BaseModel):
     title: str
     description: str
@@ -66,7 +64,7 @@ class TaskUpdate(BaseModel):
 
 class TaskOut(TaskBase):
     id: int
-    project_id: Optional[int]
+    project_id: str  # Обновлено на str
     created_at: datetime
     updated_at: Optional[datetime]
 
@@ -74,7 +72,6 @@ class TaskOut(TaskBase):
         orm_mode = True
 
 # --- Комментарии ---
-
 class TaskCommentCreate(BaseModel):
     text: str
     task_id: int
@@ -90,7 +87,6 @@ class TaskCommentOut(TaskCommentCreate):
         orm_mode = True
 
 # --- Роль пользователя в проекте ---
-
 class UserRole(BaseModel):
     id: int
     name: str
@@ -101,7 +97,6 @@ class UserRole(BaseModel):
         orm_mode = True
 
 # --- Расширенный проект с задачами и пользователями ---
-
 class ProjectWithTasksAndUsers(ProjectOut):
     tasks: List[TaskOut]
     members: List[UserOut]
