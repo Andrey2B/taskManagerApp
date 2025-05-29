@@ -54,9 +54,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialDat
   const initialProjectId = initialData?.projectId || '';
   const [selectedProjectId, setSelectedProjectId] = useState<string>(initialProjectId);
 
-  const users = useProjectUsers(selectedProjectId);
+  const { users: userList } = useProjectUsers(selectedProjectId);
+
   const assignedUser =
-    users.find((u) => u.id === initialData?.assignedTo) ??
+    userList.find((u) => u.id === initialData?.assignedTo) ??
     (initialData?.assignedTo
       ? { id: initialData.assignedTo, name: 'Unknown User', avatar: '', role: 'unknown' }
       : null);
@@ -149,9 +150,9 @@ const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialDat
                   error={formik.touched.projectId && Boolean(formik.errors.projectId)}
                   label="Project"
                 >
-                  {taskStatusOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                    {option.label}
+                  {projects.map((project) => (
+                    <MenuItem key={project.id} value={project.id}>
+                      {project.name}
                     </MenuItem>
                   ))}
                 </Select>
@@ -170,7 +171,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialDat
                   label="Assign To"
                   renderValue={(selected) => {
                     if (!selected) return 'None';
-                    const user = users.find((u) => u.id === selected) || assignedUser;
+                    const user = userList.find((u) => u.id === selected) || assignedUser;
                     return user ? (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Avatar src={user.avatar} sx={{ width: 24, height: 24 }} />
@@ -179,7 +180,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialDat
                     ) : 'Unknown';
                   }}
                 >
-                  {users.map((user) => (
+                  {userList.map((user) => (
                     <MenuItem key={user.id} value={user.id}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Avatar src={user.avatar} sx={{ width: 24, height: 24 }} />

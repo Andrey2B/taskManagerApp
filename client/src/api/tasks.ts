@@ -39,7 +39,7 @@ export const getTaskById = async (taskId: string): Promise<Task> => {
 };
 
 // Получить задачи
-export const getTasks = async (): Promise<Task[]> => {
+export const getTasks = async (projectId: string | undefined, token: string): Promise<Task[]> => {
   try {
     const response = await axios.get<Task[]>(
       `${API_URL}/tasks/`,

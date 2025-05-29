@@ -14,8 +14,17 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     tasks = relationship("Task", back_populates="user")
-    projects = relationship("Project", secondary="project_user", back_populates="members")
-    comments = relationship("TaskComment", back_populates="user")  # Связь с комментариями
+    comments = relationship("TaskComment", back_populates="user")
+
+    # Связь к ProjectUser (ассоциативная таблица с ролью)
+    projects_association = relationship("ProjectUser", back_populates="user")
+
+    # Связь напрямую к проектам через secondary
+    projects = relationship(
+        "Project",
+        secondary="project_user",
+        back_populates="members"
+    )
 
 class Project(Base):
     __tablename__ = "projects"
@@ -26,14 +35,20 @@ class Project(Base):
     status = Column(String, default="planning")
     owner_id = Column(Integer, ForeignKey("users.id"))
 
-    owner = relationship("User", back_populates="projects")
-    members = relationship("User", secondary="project_user", back_populates="projects")
+    owner = relationship("User")
     tasks = relationship("Task", back_populates="project")
+    members_association = relationship("ProjectUser", back_populates="project")
+    members = relationship("User", secondary="project_user", back_populates="projects")
 
 class ProjectUser(Base):
     __tablename__ = "project_user"
+
     project_id = Column(Integer, ForeignKey("projects.id"), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    role = Column(String, default="member")
+
+    project = relationship("Project", back_populates="members_association")
+    user = relationship("User", back_populates="projects_association")
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -42,13 +57,15 @@ class Task(Base):
     title = Column(String, index=True)
     description = Column(String)
     priority = Column(Integer)
-    status = Column(String, default="поставлена")
+    status = Column(String, default="Поставлена")
     user_id = Column(Integer, ForeignKey("users.id"))
     project_id = Column(Integer, ForeignKey("projects.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="tasks")
     project = relationship("Project", back_populates="tasks")
-    comments = relationship("TaskComment", back_populates="task")  # Связь с комментариями
+    comments = relationship("TaskComment", back_populates="task")
 
 class TaskComment(Base):
     __tablename__ = "task_comments"
@@ -60,4 +77,4 @@ class TaskComment(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     task = relationship("Task", back_populates="comments")
-    user = relationship("User", back_populates="comments")  # Связь с пользователем
+    user = relationship("User", back_populates="comments")

@@ -33,8 +33,8 @@ export const ProjectDetailPage = () => {
   const { user } = useAuth();
   const { currentRole, handleProjectLogin } = useProjectRoles();
 
-  // users — просто массив участников проекта
-  const users = useProjectUsers(projectId ?? '');
+  // Получаем объект { users, isLoading, error } из хука
+  const { users, isLoading: usersLoading, error: usersError } = useProjectUsers(projectId ?? '');
 
   useEffect(() => {
     const fetchProjectData = async () => {
@@ -47,8 +47,8 @@ export const ProjectDetailPage = () => {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         const [projectRes, tasksRes] = await Promise.all([
-          axios.get<Project>(`/projects/${projectId}`, { headers }),
-          axios.get<Task[]>(`/projects/${projectId}/tasks`, { headers }),
+          axios.get<Project>(`http://127.0.0.1:8000/projects/${projectId}`, { headers }),
+          axios.get<Task[]>(`http://127.0.0.1:8000/projects/${projectId}/tasks`, { headers }),
         ]);
 
         setProject(projectRes.data);
@@ -65,7 +65,7 @@ export const ProjectDetailPage = () => {
     };
 
     fetchProjectData();
-  }, [user, projectId, enqueueSnackbar]);
+  }, [user, projectId, enqueueSnackbar, handleProjectLogin]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: 'tasks' | 'members' | 'settings') => {
     setActiveTab(newValue);
@@ -75,7 +75,7 @@ export const ProjectDetailPage = () => {
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      await axios.delete(`/projects/${projectId}`, { headers });
+      await axios.delete(`http://127.0.0.1:8000/projects/${projectId}`, { headers });
       enqueueSnackbar('Проект удален', { variant: 'success' });
       navigate('/projects');
     } catch {
@@ -95,7 +95,7 @@ export const ProjectDetailPage = () => {
         description: projectForm.description,
       };
 
-      await axios.put(`/projects/${projectId}`, updatedProject, { headers });
+      await axios.put(`http://127.0.0.1:8000/projects/${projectId}`, updatedProject, { headers });
       setProject(updatedProject as Project);
       enqueueSnackbar('Изменения сохранены', { variant: 'success' });
       setEditMode(false);
@@ -233,10 +233,12 @@ export const ProjectDetailPage = () => {
             <>
               <Typography variant="h6" mb={2}>Участники проекта</Typography>
 
-              {!users ? (
+              {usersLoading ? (
                 <Box display="flex" justifyContent="center" py={3}>
                   <CircularProgress size={24} />
                 </Box>
+              ) : usersError ? (
+                <Typography color="error">Ошибка загрузки участников: {usersError}</Typography>
               ) : users.length === 0 ? (
                 <Typography color="text.secondary">Нет участников в проекте</Typography>
               ) : (

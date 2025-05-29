@@ -1,4 +1,3 @@
-// hooks/useProjects.ts
 import { useState } from 'react';
 import { 
   getProjects, 

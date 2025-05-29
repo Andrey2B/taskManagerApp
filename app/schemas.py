@@ -10,13 +10,11 @@ class UserCreate(BaseModel):
     password: str
 
     class Config:
-        orm_mode = True  # Указывает на использование SQLAlchemy объектов
-
+        orm_mode = True
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
-
 
 class UserOut(BaseModel):
     id: int
@@ -24,8 +22,7 @@ class UserOut(BaseModel):
     email: EmailStr
 
     class Config:
-        orm_mode = True  # Указывает на использование SQLAlchemy объектов
-
+        orm_mode = True
 
 # --- Проекты ---
 
@@ -33,25 +30,21 @@ class ProjectBase(BaseModel):
     name: str
     description: Optional[str] = None
 
-
 class ProjectCreate(ProjectBase):
-    status: str  # Статус проекта (например, "active", "completed")
-
+    status: str
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    status: Optional[str] = None  # Убрал обязательность статуса для обновления
-
+    status: Optional[str] = None
 
 class ProjectOut(ProjectBase):
     id: int
     owner_id: int
-    members: List[UserOut]  # Указание участников проекта
+    members: List[UserOut]
 
     class Config:
-        orm_mode = True  # Указывает на использование SQLAlchemy объектов
-
+        orm_mode = True
 
 # --- Задачи ---
 
@@ -59,12 +52,10 @@ class TaskBase(BaseModel):
     title: str
     description: str
     priority: int
-    status: Optional[str] = "Поставлена"  # Статус задачи по умолчанию
-
+    status: Optional[str] = "Поставлена"
 
 class TaskCreate(TaskBase):
-    project_id: Optional[int] = None  # Опциональный id проекта для привязки
-
+    project_id: Optional[int] = None
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
@@ -73,19 +64,16 @@ class TaskUpdate(BaseModel):
     status: Optional[str] = None
     project_id: Optional[int] = None
 
-
 class TaskOut(TaskBase):
     id: int
-    status: str
     project_id: Optional[int]
-    created_at: datetime  # Добавлен атрибут для времени создания задачи
-    updated_at: Optional[datetime]  # Добавлен атрибут для времени последнего обновления
+    created_at: datetime
+    updated_at: Optional[datetime]
 
     class Config:
-        orm_mode = True  # Указывает на использование SQLAlchemy объектов
+        orm_mode = True
 
-
-# --- Комментарии к задачам ---
+# --- Комментарии ---
 
 class TaskCommentCreate(BaseModel):
     text: str
@@ -94,27 +82,26 @@ class TaskCommentCreate(BaseModel):
     class Config:
         orm_mode = True
 
-
 class TaskCommentOut(TaskCommentCreate):
     id: int
-    created_at: datetime  # Добавлен атрибут для времени создания комментария
+    created_at: datetime
 
     class Config:
         orm_mode = True
 
-
-# --- Роли пользователя в проекте ---
+# --- Роль пользователя в проекте ---
 
 class UserRole(BaseModel):
-    role: str  # Роль в проекте (например, "owner", "manager", "developer")
-    user_id: int  # ID пользователя, которому назначена роль
+    id: int
+    name: str
+    avatar: Optional[str] = None
+    role: str
 
     class Config:
         orm_mode = True
 
-
-# --- Роллинг список для ответа о проекте с пользователями и задачами ---
+# --- Расширенный проект с задачами и пользователями ---
 
 class ProjectWithTasksAndUsers(ProjectOut):
-    tasks: List[TaskOut]  # Список задач, связанных с проектом
-    members: List[UserOut]  # Список участников проекта
+    tasks: List[TaskOut]
+    members: List[UserOut]

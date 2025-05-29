@@ -1,6 +1,6 @@
 import axios from 'axios';
-import {  User, RegisterData, LoginResponse } from '../types/auth';
-import { CreateProjectData, Project, UpdateProjectData  } from '../types/project';
+import { User, RegisterData, LoginResponse } from '../types/auth';
+import { CreateProjectData, Project, UpdateProjectData } from '../types/project';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
 
@@ -11,6 +11,7 @@ const axiosInstance = axios.create({
   },
 });
 
+// Получить текущего пользователя
 export const getCurrentUser = async (): Promise<User> => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -18,16 +19,15 @@ export const getCurrentUser = async (): Promise<User> => {
   }
   const response = await axios.get(`${API_URL}/users/me`, {
     headers: {
-      Authorization: `Bearer ${token}`,  // Убедитесь, что токен передается в заголовке
+      Authorization: `Bearer ${token}`,
     },
   });
 
-  const user = response.data as User;
-  return user;
+  return response.data as User;
 };
 
 // Получить все проекты
-export const getProjects = async (token: string) => {
+export const getProjects = async (token: string): Promise<Project[]> => {
   try {
     const response = await axiosInstance.get<Project[]>('/projects', {
       headers: { Authorization: `Bearer ${token}` },
@@ -36,12 +36,12 @@ export const getProjects = async (token: string) => {
   } catch (error) {
     console.error('Ошибка при получении проектов:', error);
     throw new Error('Не удалось загрузить проекты');
-  };
+  }
 };
 
 // Создать новый проект
 export const createProject = async (
-  projectData: CreateProjectData, 
+  projectData: CreateProjectData,
   token: string
 ): Promise<Project> => {
   try {
@@ -57,7 +57,7 @@ export const createProject = async (
 
 // Обновить существующий проект
 export const updateProject = async (
-  id: string, 
+  id: string,
   projectData: UpdateProjectData,
   token: string
 ): Promise<Project> => {
@@ -72,8 +72,8 @@ export const updateProject = async (
   }
 };
 
-//Удалить проект
-export const deleteProject = async (id: string, token: string) => {
+// Удалить проект
+export const deleteProject = async (id: string, token: string): Promise<void> => {
   try {
     await axiosInstance.delete(`/projects/${id}`, {
       headers: { Authorization: `Bearer ${token}` },

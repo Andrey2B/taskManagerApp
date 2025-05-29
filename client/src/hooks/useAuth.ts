@@ -70,7 +70,7 @@ export const useAuth = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('projectId');
     localStorage.removeItem('role');
-    navigate('/login'); // ← здесь все правильно
+    navigate('/login'); 
   };
 
   // Установка роли пользователя в проекте

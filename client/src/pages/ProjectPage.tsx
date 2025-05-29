@@ -23,6 +23,11 @@ import { Project } from '../types/project';
 import { Task, TaskStatus, TaskPriority, TaskComment } from '../types/task';
 import { User } from '../types/auth';
 
+// ✅ axios инстанс
+const api = axios.create({
+  baseURL: 'http://127.0.0.1:8000',
+});
+
 export const ProjectPage: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
@@ -39,23 +44,25 @@ export const ProjectPage: React.FC = () => {
     dueDate: '',
     assignedTo: undefined,
   });
-  const [creatingTask, setCreatingTask] = useState(false);
 
+  const [creatingTask, setCreatingTask] = useState(false);
   const [commentInputs, setCommentInputs] = useState<{ [taskId: string]: string }>({});
 
   const { user: currentUser, token } = useAuth();
 
-  // --- API запросы ---
-
-  const fetchProject = async (projectId: string) => {
-    return axios.get<Project>(`/projects/${projectId}`).then(res => res.data);
+  const fetchProject = async (projectId: string, token: string) => {
+    return api.get<Project>(`/projects/${projectId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(res => res.data);
   };
 
-  const fetchTasks = async (projectId: string) => {
-    return axios.get<Task[]>(`/projects/${projectId}/tasks`).then(res => res.data);
+  const fetchTasks = async (projectId: string, token: string) => {
+    return api.get<Task[]>(`/projects/${projectId}/tasks`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(res => res.data);
   };
 
-  const createTask = async (task: Partial<Task>) => {
+  const createTask = async (task: Partial<Task>, token: string) => {
     const payload = {
       title: task.title,
       description: task.description,
@@ -64,30 +71,34 @@ export const ProjectPage: React.FC = () => {
       dueDate: task.dueDate,
       priority: task.priority,
     };
-    return axios.post<Task>('/tasks', payload).then(res => res.data);
+    return api.post<Task>('/tasks', payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(res => res.data);
   };
 
-  const updateTaskStatus = async (taskId: string, status: TaskStatus) => {
-    return axios.patch(`/tasks/${taskId}`, { status });
+  const updateTaskStatus = async (taskId: string, status: TaskStatus, token: string) => {
+    return api.patch(`/tasks/${taskId}`, { status }, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
   };
 
-  const createComment = async (taskId: string, text: string) => {
-    return axios
-      .post<TaskComment>(`/tasks/${taskId}/comments`, { text })
-      .then(res => res.data);
+  const createComment = async (taskId: string, text: string, token: string) => {
+    return api.post<TaskComment>(`/tasks/${taskId}/comments`, { text }, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(res => res.data);
   };
 
-  // --- Эффект загрузки данных ---
-
+  // ✅ Загрузка проекта и задач
   useEffect(() => {
-    if (!projectId) {
+    if (!projectId || !token) {
       navigate('/projects');
       return;
     }
+
     setLoading(true);
     setError(null);
 
-    Promise.all([fetchProject(projectId), fetchTasks(projectId)])
+    Promise.all([fetchProject(projectId, token), fetchTasks(projectId, token)])
       .then(([proj, tasks]) => {
         setProject(proj);
         setTasks(tasks);
@@ -97,10 +108,9 @@ export const ProjectPage: React.FC = () => {
         setError('Ошибка загрузки данных');
       })
       .finally(() => setLoading(false));
-  }, [projectId, navigate]);
+  }, [projectId, navigate, token]);
 
-  // --- Обработчики ---
-
+  // ✅ Обработчики
   const handleCreateTask = async () => {
     if (!newTask.title?.trim()) return;
     setCreatingTask(true);
@@ -110,7 +120,7 @@ export const ProjectPage: React.FC = () => {
         ...newTask,
         projectId: projectId!,
         createdBy: currentUser || undefined,
-      });
+      }, token!);
       setTasks(prev => [...prev, created]);
       setNewTask({
         title: '',
@@ -131,7 +141,7 @@ export const ProjectPage: React.FC = () => {
     if (!text) return;
     setError(null);
     try {
-      const comment = await createComment(taskId, text);
+      const comment = await createComment(taskId, text, token!);
       setTasks(prev =>
         prev.map(t =>
           t.id === taskId ? { ...t, comments: [...(t.comments || []), comment] } : t
@@ -147,7 +157,7 @@ export const ProjectPage: React.FC = () => {
   const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
     setError(null);
     try {
-      await updateTaskStatus(taskId, newStatus);
+      await updateTaskStatus(taskId, newStatus, token!);
       setTasks(prev =>
         prev.map(t => (t.id === taskId ? { ...t, status: newStatus } : t))
       );
@@ -157,11 +167,11 @@ export const ProjectPage: React.FC = () => {
     }
   };
 
-  // --- Хелперы для User или string ---
-
+  // ✅ Хелперы
   const getUserId = (user: string | User) => (typeof user === 'string' ? user : user.id);
   const getUserName = (user: string | User) => (typeof user === 'string' ? user : user.name);
 
+  // ✅ Рендер
   if (loading) {
     return (
       <Container sx={{ mt: 4 }}>
@@ -173,9 +183,7 @@ export const ProjectPage: React.FC = () => {
   if (error) {
     return (
       <Container sx={{ mt: 4 }}>
-        <Typography variant="h6" color="error">
-          {error}
-        </Typography>
+        <Typography variant="h6" color="error">{error}</Typography>
       </Container>
     );
   }
@@ -183,55 +191,34 @@ export const ProjectPage: React.FC = () => {
   if (!project) {
     return (
       <Container sx={{ mt: 4 }}>
-        <Typography variant="h6" color="error">
-          Проект не найден
-        </Typography>
+        <Typography variant="h6" color="error">Проект не найден</Typography>
       </Container>
     );
   }
 
   return (
     <Container sx={{ mt: 4, mb: 4 }}>
-      <Button onClick={() => navigate('/projects')} sx={{ mb: 2 }}>
-        ← Назад к проектам
-      </Button>
+      <Button onClick={() => navigate('/projects')} sx={{ mb: 2 }}>← Назад к проектам</Button>
 
-      <Typography variant="h4" gutterBottom>
-        {project.name}
-      </Typography>
-      <Typography variant="body1" paragraph>
-        {project.description}
-      </Typography>
+      <Typography variant="h4" gutterBottom>{project.name}</Typography>
+      <Typography variant="body1" paragraph>{project.description}</Typography>
       <Typography variant="subtitle2" color="text.secondary" paragraph>
         Статус: {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
       </Typography>
       <Typography variant="subtitle2" paragraph>
-        Участники:{' '}
-        {project.members
-          .map((m) => getUserName(m.user))
-          .join(', ')}
+        Участники: {project.members.map((m) => getUserName(m.user)).join(', ')}
       </Typography>
 
       <Paper sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Задачи
-        </Typography>
+        <Typography variant="h6" gutterBottom>Задачи</Typography>
         {tasks.length === 0 && <Typography>Нет задач</Typography>}
 
         {tasks.map((task) => (
           <Paper key={task.id} sx={{ mb: 2, p: 2 }}>
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-              flexWrap="wrap"
-            >
+            <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap">
               <Typography
                 variant="subtitle1"
-                sx={{
-                  textDecoration: task.status === 'done' ? 'line-through' : 'none',
-                  fontWeight: 'bold',
-                }}
+                sx={{ textDecoration: task.status === 'done' ? 'line-through' : 'none', fontWeight: 'bold' }}
               >
                 {task.title}
               </Typography>
@@ -242,9 +229,7 @@ export const ProjectPage: React.FC = () => {
                   labelId={`status-label-${task.id}`}
                   value={task.status}
                   label="Статус"
-                  onChange={(e) =>
-                    handleStatusChange(task.id, e.target.value as TaskStatus)
-                  }
+                  onChange={(e) => handleStatusChange(task.id, e.target.value as TaskStatus)}
                 >
                   <MenuItem value="todo">В работе</MenuItem>
                   <MenuItem value="in-progress">В процессе</MenuItem>
@@ -254,9 +239,7 @@ export const ProjectPage: React.FC = () => {
               </FormControl>
             </Box>
 
-            <Typography variant="body2" paragraph>
-              {task.description}
-            </Typography>
+            <Typography variant="body2" paragraph>{task.description}</Typography>
 
             <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
               <Typography variant="caption">Приоритет: {task.priority}</Typography>
@@ -269,8 +252,7 @@ export const ProjectPage: React.FC = () => {
                 </Box>
               )}
               <Typography variant="caption">
-                Назначена:{' '}
-                {typeof task.assignedTo === 'string'
+                Назначена: {typeof task.assignedTo === 'string'
                   ? task.assignedTo
                   : task.assignedTo?.name || '—'}
               </Typography>
@@ -292,9 +274,7 @@ export const ProjectPage: React.FC = () => {
                   ))}
                 </List>
               ) : (
-                <Typography variant="body2" color="text.secondary">
-                  Нет комментариев
-                </Typography>
+                <Typography variant="body2" color="text.secondary">Нет комментариев</Typography>
               )}
               <Box display="flex" gap={1} mt={1}>
                 <TextField
@@ -313,9 +293,7 @@ export const ProjectPage: React.FC = () => {
                     }
                   }}
                 />
-                <Button variant="contained" onClick={() => handleAddComment(task.id)}>
-                  Отправить
-                </Button>
+                <Button variant="contained" onClick={() => handleAddComment(task.id)}>Отправить</Button>
               </Box>
             </Box>
           </Paper>
@@ -323,9 +301,7 @@ export const ProjectPage: React.FC = () => {
       </Paper>
 
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Создать новую задачу
-        </Typography>
+        <Typography variant="h6" gutterBottom>Создать новую задачу</Typography>
 
         <TextField
           label="Название"
@@ -341,9 +317,7 @@ export const ProjectPage: React.FC = () => {
           rows={3}
           margin="normal"
           value={newTask.description || ''}
-          onChange={(e) =>
-            setNewTask((prev) => ({ ...prev, description: e.target.value }))
-          }
+          onChange={(e) => setNewTask((prev) => ({ ...prev, description: e.target.value }))}
         />
         <FormControl fullWidth margin="normal" size="small">
           <InputLabel id="priority-label">Приоритет</InputLabel>
