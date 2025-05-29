@@ -40,7 +40,7 @@ class Project(Base):
 
     # Добавляем связь с ассоциацией
     members_association = relationship("ProjectUser", back_populates="project")  # Добавлено
-
+    project_users = relationship("ProjectUser", back_populates="project", cascade="all, delete-orphan")
 
 
 
@@ -53,9 +53,8 @@ class ProjectUser(Base):
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     role = Column(String)
 
-    # Обратные связи
-    project = relationship("Project", back_populates="members_association")  # Обратная связь с проектом
-    user = relationship("User", back_populates="project_users")  # Обратная связь с пользователем
+    project = relationship("Project", back_populates="project_users")
+    user = relationship("User", back_populates="project_users")
 
 
 

@@ -47,10 +47,24 @@ def delete_project(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    deleted = crud.delete_project(db=db, project_id=project_id, user_id=current_user.id)
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Проект не найден или доступ запрещён")
-    return {"message": "Проект удалён"}
+    # Получаем проект
+    db_project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not db_project:
+        raise HTTPException(status_code=404, detail="Проект не найден")
+
+    # Проверяем, является ли пользователь владельцем проекта
+    if db_project.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Вы не являетесь владельцем проекта")
+
+    # Удаляем связи с пользователями
+    db.query(models.ProjectUser).filter(models.ProjectUser.project_id == project_id).delete()
+
+    # Удаляем проект
+    db.delete(db_project)
+    db.commit()
+
+    return {"message": "Проект удален"}
+
 
 # Получить один проект по ID
 @router.get("/{project_id}", response_model=schemas.ProjectOut)
