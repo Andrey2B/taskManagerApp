@@ -88,3 +88,15 @@ def delete_task(db: Session, task_id: int):
     db.delete(db_task)
     db.commit()
     return {"message": "Task deleted"}
+
+# --- Комментарии к задачам ---
+def create_task_comment(db: Session, comment: schemas.TaskCommentOut):
+    db_comment = models.TaskComment(
+        text=comment.text,
+        task_id=comment.task_id,
+        user_id=comment.user_id
+    )
+    db.add(db_comment)
+    db.commit()
+    db.refresh(db_comment)
+    return db_comment

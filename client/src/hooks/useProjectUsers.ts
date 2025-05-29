@@ -15,7 +15,7 @@ export const useProjectUsers = (projectId: string) => {
 
   useEffect(() => {
     axios
-      .get<User[]>(`/api/projects/${projectId}/users`)
+      .get<User[]>(`/projects/${projectId}/users`)
       .then((res) => setUsers(res.data))
       .catch((error) => {
         // Обработать ошибку, если нужно

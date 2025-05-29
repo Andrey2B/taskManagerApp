@@ -19,8 +19,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useProjectRoles } from '../hooks/useProjectRoles';
 
 export const ProjectDetailPage = () => {
-  // Обрати внимание: в App.tsx у тебя параметр называется ":id", а не ":projectId"
-  const { id: projectId } = useParams<{ id: string }>();  // <- Здесь "id", а не "projectId"
+  const { id: projectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const [project, setProject] = useState<Project | null>(null);
@@ -33,6 +32,8 @@ export const ProjectDetailPage = () => {
 
   const { user } = useAuth();
   const { currentRole, handleProjectLogin } = useProjectRoles();
+
+  // users — просто массив участников проекта
   const users = useProjectUsers(projectId ?? '');
 
   useEffect(() => {
@@ -42,20 +43,19 @@ export const ProjectDetailPage = () => {
           await handleProjectLogin(user.id, projectId);
         }
 
-        // Получаем токен из localStorage и передаём в заголовках Authorization
         const token = localStorage.getItem('token');
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
         const [projectRes, tasksRes] = await Promise.all([
-          axios.get<Project>(`/api/projects/${projectId}`, { headers }),
-          axios.get<Task[]>(`/api/projects/${projectId}/tasks`, { headers })
+          axios.get<Project>(`/projects/${projectId}`, { headers }),
+          axios.get<Task[]>(`/projects/${projectId}/tasks`, { headers }),
         ]);
 
         setProject(projectRes.data);
         setTasks(tasksRes.data);
         setProjectForm({
           name: projectRes.data.name,
-          description: projectRes.data.description || ''
+          description: projectRes.data.description || '',
         });
       } catch (error) {
         enqueueSnackbar('Ошибка загрузки данных проекта', { variant: 'error' });
@@ -75,7 +75,7 @@ export const ProjectDetailPage = () => {
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      await axios.delete(`/api/projects/${projectId}`, { headers });
+      await axios.delete(`/projects/${projectId}`, { headers });
       enqueueSnackbar('Проект удален', { variant: 'success' });
       navigate('/projects');
     } catch {
@@ -92,10 +92,10 @@ export const ProjectDetailPage = () => {
       const updatedProject = {
         ...project,
         name: projectForm.name,
-        description: projectForm.description
+        description: projectForm.description,
       };
 
-      await axios.put(`/api/projects/${projectId}`, updatedProject, { headers });
+      await axios.put(`/projects/${projectId}`, updatedProject, { headers });
       setProject(updatedProject as Project);
       enqueueSnackbar('Изменения сохранены', { variant: 'success' });
       setEditMode(false);
@@ -145,7 +145,7 @@ export const ProjectDetailPage = () => {
             sx={{
               fontSize: '1.5rem',
               fontWeight: 'bold',
-              '& .MuiInputBase-input': { fontSize: '1.5rem' }
+              '& .MuiInputBase-input': { fontSize: '1.5rem' },
             }}
           />
         ) : (
@@ -228,11 +228,45 @@ export const ProjectDetailPage = () => {
               )}
             </>
           )}
-          {/* Остальные вкладки аналогично */}
+
+          {activeTab === 'members' && (
+            <>
+              <Typography variant="h6" mb={2}>Участники проекта</Typography>
+
+              {!users ? (
+                <Box display="flex" justifyContent="center" py={3}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : users.length === 0 ? (
+                <Typography color="text.secondary">Нет участников в проекте</Typography>
+              ) : (
+                <List>
+                  {users.map(user => (
+                    <ListItem key={user.id}>
+                      <ListItemAvatar>
+                        <Avatar src={user.avatar || undefined}>
+                          {!user.avatar && <PersonIcon />}
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={user.name}
+                        secondary={`Роль: ${user.role}`}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              )}
+            </>
+          )}
+
+          {activeTab === 'settings' && (
+            <Typography variant="body1" color="text.secondary">
+              Здесь будут настройки проекта.
+            </Typography>
+          )}
         </Box>
       </Paper>
 
-      {/* Диалог удаления проекта */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Удалить проект?</DialogTitle>
         <DialogContent>
