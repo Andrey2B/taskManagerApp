@@ -14,7 +14,7 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     tasks = relationship("Task", back_populates="user")
-    projects = relationship("Project", back_populates="owner")
+    projects = relationship("Project", secondary="project_user", back_populates="members")  # Много ко многим с проектами
 
 class Project(Base):
     __tablename__ = "projects"
@@ -22,10 +22,11 @@ class Project(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     description = Column(String)
-    status = Column(String, default="planning")  # Значение по умолчанию для статуса
+    status = Column(String, default="planning")  # Добавлено поле status
     owner_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="projects")
+    members = relationship("User", secondary="project_user", back_populates="projects")  # Много ко многим с пользователями
     tasks = relationship("Task", back_populates="project")
 
 class Task(Base):
@@ -41,3 +42,8 @@ class Task(Base):
 
     user = relationship("User", back_populates="tasks")
     project = relationship("Project", back_populates="tasks")
+
+class ProjectUser(Base):
+    __tablename__ = "project_user"
+    project_id = Column(Integer, ForeignKey("projects.id"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)

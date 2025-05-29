@@ -46,3 +46,14 @@ def delete_project(
     if not deleted:
         raise HTTPException(status_code=404, detail="Проект не найден или доступ запрещён")
     return {"message": "Проект удалён"}
+
+@router.get("api/{project_id}/users", response_model=List[schemas.UserOut])
+def get_project_users(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return project.members  # Например, у проекта есть атрибут members, если вы его добавили
