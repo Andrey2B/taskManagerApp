@@ -10,7 +10,7 @@ import { updateTask, deleteTask, getTaskById } from '../api/tasks';
 const statusOptions = ['todo', 'in_progress', 'done'];
 
 const TaskDetailPage: React.FC = () => {
-  const { taskId } = useParams<{ taskId: string }>();
+  const { id: taskId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
 

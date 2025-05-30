@@ -10,11 +10,11 @@ const getToken = () => {
 };
 
 // Добавить задачу
-export const addTask = async (taskData: CreateTaskDto): Promise<Task> => {
+export const addTask = async (projectId: string, taskData: CreateTaskDto): Promise<Task> => {
   try {
     const response = await axios.post<Task>(
-      `${API_URL}/tasks/`,
-      taskData,
+      `${API_URL}/projects/${projectId}/tasks`, 
+      taskData, 
       { headers: { Authorization: `Bearer ${getToken()}` } }
     );
     return response.data;

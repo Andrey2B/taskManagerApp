@@ -33,7 +33,6 @@ export const ProjectDetailPage = () => {
   const { user } = useAuth();
   const { currentRole, handleProjectLogin } = useProjectRoles();
 
-  // Получаем объект { users, isLoading, error } из хука
   const { users, isLoading: usersLoading, error: usersError } = useProjectUsers(projectId ?? '');
 
   useEffect(() => {

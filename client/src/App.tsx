@@ -1,5 +1,5 @@
-import React, { useState } from 'react'; 
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Layout from './components/layout/Layout';
 import DashboardPage from './pages/DashboardPage';
@@ -13,21 +13,60 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AuthPage } from './pages/AuthPage';
 import NotFoundPage from './pages/NotFoundPage';
 import TaskForm from './components/tasks/TaskForm';
-import { Task } from './types/task';
 import { AuthProvider } from './context/AuthContext';
 import { CustomThemeProvider } from './context/ThemeContext';
 import { NewProjectPage } from './pages/NewProjectPage';
+import { Task, CreateTaskDto } from './types/task';
+import { addTask } from './api/tasks';
+
+// Обёртка для TaskForm, чтобы получить projectId из URL
+const TaskFormWrapper: React.FC<{
+  onSubmit: (data: FormData) => Promise<void>;
+  initialData?: Partial<Task>;
+  onClose: () => void;
+}> = ({ onSubmit, initialData, onClose }) => {
+  const { id: projectId } = useParams<{ id: string }>();
+
+  // Если projectId нет — показываем ошибку
+  if (!projectId) {
+    return <div>Ошибка: проект не найден</div>;
+  }
+
+  return (
+    <TaskForm
+      open={true}
+      onClose={onClose}
+      onSubmit={onSubmit}
+      initialData={initialData}
+      projectId={projectId}
+    />
+  );
+};
 
 const App: React.FC = () => {
   const navigate = useNavigate();
-  const [isTaskFormOpen, setTaskFormOpen] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<Partial<Task> | null>(null);
 
-  const handleOpenTaskForm = () => setTaskFormOpen(true);
-  const handleCloseTaskForm = () => setTaskFormOpen(false);
-
-  const handleSubmitTaskForm = async (formData: Partial<Task>) => {
-    console.log('Создана задача:', formData);
-    setTaskFormOpen(false);
+  const handleSubmitTaskForm = async (formData: FormData) => {
+    const projectId = formData.get('projectId');
+    if (!projectId || typeof projectId !== 'string') {
+      console.error('projectId не найден или некорректен');
+      return;
+    }
+  
+    // Создать объект задачи из formData, кроме projectId — можно вручную
+    const taskData: CreateTaskDto = {
+      title: formData.get('title') as string,
+      description: formData.get('description') as string,
+      type: 'marketing'
+    };
+  
+    try {
+      await addTask(projectId, taskData);
+      navigate(-1);
+    } catch (error) {
+      console.error('Ошибка при добавлении задачи:', error);
+    }
   };
 
   const handleAuthSuccess = () => {
@@ -50,16 +89,14 @@ const App: React.FC = () => {
                 <Route index element={<ProjectsPage />} />
                 <Route path="new" element={<NewProjectPage />} />
                 <Route path=":id">
-                  {/* Страница проекта */}
                   <Route index element={<ProjectDetailPage />} />
-                  {/* Создание задачи внутри проекта */}
                   <Route
                     path="new-task"
                     element={
-                      <TaskForm
-                        open={isTaskFormOpen}
-                        onClose={handleCloseTaskForm}
+                      <TaskFormWrapper
                         onSubmit={handleSubmitTaskForm}
+                        initialData={taskToEdit ?? undefined}
+                        onClose={() => navigate(-1)}
                       />
                     }
                   />

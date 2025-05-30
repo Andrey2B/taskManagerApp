@@ -14,6 +14,14 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Avatar,
+  Stack,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -23,7 +31,7 @@ import { Project } from '../types/project';
 import { Task, TaskStatus, TaskPriority, TaskComment } from '../types/task';
 import { User } from '../types/auth';
 
-// ✅ axios инстанс
+// axios инстанс
 const api = axios.create({
   baseURL: 'http://127.0.0.1:8000',
 });
@@ -47,9 +55,25 @@ export const ProjectPage: React.FC = () => {
 
   const [creatingTask, setCreatingTask] = useState(false);
   const [commentInputs, setCommentInputs] = useState<{ [taskId: string]: string }>({});
+  const [filterUserId, setFilterUserId] = useState<string | null>(null);
 
   const { user: currentUser, token } = useAuth();
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingProject, setDeletingProject] = useState(false);
+
+  // Хелперы для пользователя
+  const getUserId = (user: string | User) => (typeof user === 'string' ? user : user.id);
+  const getUserName = (user: string | User) => (typeof user === 'string' ? user : user.name);
+
+  // Проверяем, есть ли у текущего пользователя роль owner в проекте
+  const isOwner = () => {
+    if (!project || !currentUser) return false;
+    const member = project.members.find(m => getUserId(m.user) === currentUser.id);
+    return member?.role === 'owner';
+  };
+
+  // API вызовы
   const fetchProject = async (projectId: string, token: string) => {
     return api.get<Project>(`/projects/${projectId}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -88,7 +112,26 @@ export const ProjectPage: React.FC = () => {
     }).then(res => res.data);
   };
 
-  // ✅ Загрузка проекта и задач
+  // Удаление проекта
+  const deleteProject = async () => {
+    if (!projectId || !token) return;
+    setDeletingProject(true);
+    setError(null);
+    try {
+      await api.delete(`/projects/${projectId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      navigate('/projects');
+    } catch (e) {
+      console.error(e);
+      setError('Ошибка при удалении проекта');
+    } finally {
+      setDeletingProject(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  // Загрузка проекта и задач
   useEffect(() => {
     if (!projectId || !token) {
       navigate('/projects');
@@ -110,7 +153,8 @@ export const ProjectPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, [projectId, navigate, token]);
 
-  // ✅ Обработчики
+  // Обработчики
+
   const handleCreateTask = async () => {
     if (!newTask.title?.trim()) return;
     setCreatingTask(true);
@@ -167,11 +211,16 @@ export const ProjectPage: React.FC = () => {
     }
   };
 
-  // ✅ Хелперы
-  const getUserId = (user: string | User) => (typeof user === 'string' ? user : user.id);
-  const getUserName = (user: string | User) => (typeof user === 'string' ? user : user.name);
+  // Фильтрация задач по назначенному пользователю
+  const filteredTasks = filterUserId
+    ? tasks.filter(task => {
+        const assignedId = typeof task.assignedTo === 'string' ? task.assignedTo : task.assignedTo?.id;
+        return assignedId === filterUserId;
+      })
+    : tasks;
 
-  // ✅ Рендер
+  // Рендер
+
   if (loading) {
     return (
       <Container sx={{ mt: 4 }}>
@@ -200,20 +249,69 @@ export const ProjectPage: React.FC = () => {
     <Container sx={{ mt: 4, mb: 4 }}>
       <Button onClick={() => navigate('/projects')} sx={{ mb: 2 }}>← Назад к проектам</Button>
 
-      <Typography variant="h4" gutterBottom>{project.name}</Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Typography variant="h4" gutterBottom>{project.name}</Typography>
+        {isOwner() && (
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            Удалить проект
+          </Button>
+        )}
+      </Box>
+
       <Typography variant="body1" paragraph>{project.description}</Typography>
       <Typography variant="subtitle2" color="text.secondary" paragraph>
         Статус: {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
       </Typography>
-      <Typography variant="subtitle2" paragraph>
-        Участники: {project.members.map((m) => getUserName(m.user)).join(', ')}
-      </Typography>
+
+      {/* Участники с аватарами и ролями */}
+      <Typography variant="subtitle2" gutterBottom>Участники:</Typography>
+      <Stack direction="row" spacing={1} flexWrap="wrap">
+        {project.members.map((member) => {
+          const user = member.user as User;
+          return (
+            <Tooltip
+              key={user.id}
+              title={`${user.name}${member.role ? ` — ${member.role}` : ''}`}
+            >
+              <Avatar
+                src={user.avatar}
+                alt={user.name}
+                sx={{ width: 32, height: 32, fontSize: 14, cursor: 'default' }}
+              >
+                {!user.avatar && user.name.charAt(0).toUpperCase()}
+              </Avatar>
+            </Tooltip>
+          );
+        })}
+      </Stack>
+
+      {/* Фильтр по пользователю */}
+      <FormControl fullWidth margin="normal" size="small">
+        <InputLabel id="filter-user-label">Фильтр по пользователю</InputLabel>
+        <Select
+          labelId="filter-user-label"
+          value={filterUserId || ''}
+          label="Фильтр по пользователю"
+          onChange={e => setFilterUserId(e.target.value || null)}
+        >
+          <MenuItem value="">Все пользователи</MenuItem>
+          {project.members.map(member => (
+            <MenuItem key={getUserId(member.user)} value={getUserId(member.user)}>
+              {getUserName(member.user)}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom>Задачи</Typography>
-        {tasks.length === 0 && <Typography>Нет задач</Typography>}
+        {filteredTasks.length === 0 && <Typography>Нет задач</Typography>}
 
-        {tasks.map((task) => (
+        {filteredTasks.map((task) => (
           <Paper key={task.id} sx={{ mb: 2, p: 2 }}>
             <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap">
               <Typography
@@ -274,26 +372,26 @@ export const ProjectPage: React.FC = () => {
                   ))}
                 </List>
               ) : (
-                <Typography variant="body2" color="text.secondary">Нет комментариев</Typography>
+                <Typography variant="caption">Комментариев нет</Typography>
               )}
-              <Box display="flex" gap={1} mt={1}>
+
+              {/* Форма добавления комментария */}
+              <Box display="flex" mt={1} gap={1} flexWrap="wrap">
                 <TextField
+                  label="Добавить комментарий"
                   size="small"
                   fullWidth
-                  variant="outlined"
-                  placeholder="Добавить комментарий"
                   value={commentInputs[task.id] || ''}
-                  onChange={(e) =>
-                    setCommentInputs((prev) => ({ ...prev, [task.id]: e.target.value }))
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleAddComment(task.id);
-                    }
-                  }}
+                  onChange={e => setCommentInputs(prev => ({ ...prev, [task.id]: e.target.value }))}
                 />
-                <Button variant="contained" onClick={() => handleAddComment(task.id)}>Отправить</Button>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={() => handleAddComment(task.id)}
+                  disabled={!commentInputs[task.id]?.trim()}
+                >
+                  Добавить
+                </Button>
               </Box>
             </Box>
           </Paper>
@@ -302,79 +400,61 @@ export const ProjectPage: React.FC = () => {
 
       <Paper sx={{ p: 3 }}>
         <Typography variant="h6" gutterBottom>Создать новую задачу</Typography>
-
-        <TextField
-          label="Название"
-          fullWidth
-          margin="normal"
-          value={newTask.title || ''}
-          onChange={(e) => setNewTask((prev) => ({ ...prev, title: e.target.value }))}
-        />
-        <TextField
-          label="Описание"
-          fullWidth
-          multiline
-          rows={3}
-          margin="normal"
-          value={newTask.description || ''}
-          onChange={(e) => setNewTask((prev) => ({ ...prev, description: e.target.value }))}
-        />
-        <FormControl fullWidth margin="normal" size="small">
-          <InputLabel id="priority-label">Приоритет</InputLabel>
-          <Select
-            labelId="priority-label"
-            value={newTask.priority || 'medium'}
-            label="Приоритет"
-            onChange={(e) =>
-              setNewTask((prev) => ({
-                ...prev,
-                priority: e.target.value as TaskPriority,
-              }))
-            }
-          >
-            <MenuItem value="low">Низкий</MenuItem>
-            <MenuItem value="medium">Средний</MenuItem>
-            <MenuItem value="high">Высокий</MenuItem>
-            <MenuItem value="critical">Критический</MenuItem>
-          </Select>
-        </FormControl>
-        <TextField
-          label="Срок выполнения"
-          type="date"
-          fullWidth
-          margin="normal"
-          InputLabelProps={{ shrink: true }}
-          value={newTask.dueDate ? newTask.dueDate.slice(0, 10) : ''}
-          onChange={(e) => setNewTask((prev) => ({ ...prev, dueDate: e.target.value }))}
-        />
-        <FormControl fullWidth margin="normal" size="small">
-          <InputLabel id="assignedTo-label">Назначить</InputLabel>
-          <Select
-            labelId="assignedTo-label"
-            value={
-              (newTask.assignedTo &&
-              typeof newTask.assignedTo === 'object'
-                ? newTask.assignedTo.id
-                : newTask.assignedTo) || ''
-            }
-            label="Назначить"
-            onChange={(e) =>
-              setNewTask((prev) => ({
-                ...prev,
-                assignedTo: e.target.value || undefined,
-              }))
-            }
-          >
-            <MenuItem value="">Не назначено</MenuItem>
-            {project.members.map((member) => (
-              <MenuItem key={getUserId(member.user)} value={getUserId(member.user)}>
-                {getUserName(member.user)}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <Box mt={2}>
+        <Box display="flex" flexDirection="column" gap={2} maxWidth={600}>
+          <TextField
+            label="Название"
+            value={newTask.title || ''}
+            onChange={e => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Описание"
+            value={newTask.description || ''}
+            onChange={e => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+            fullWidth
+            multiline
+            rows={3}
+          />
+          <FormControl fullWidth>
+            <InputLabel id="assigned-user-label">Назначить</InputLabel>
+            <Select
+              labelId="assigned-user-label"
+              value={newTask.assignedTo ? (typeof newTask.assignedTo === 'string' ? newTask.assignedTo : newTask.assignedTo.id) : ''}
+              label="Назначить"
+              onChange={e => {
+                const selectedUser = project?.members.find(m => getUserId(m.user) === e.target.value);
+                setNewTask(prev => ({ ...prev, assignedTo: selectedUser ? selectedUser.user : undefined }));
+              }}
+            >
+              <MenuItem value="">Не назначать</MenuItem>
+              {project?.members.map(member => (
+                <MenuItem key={getUserId(member.user)} value={getUserId(member.user)}>
+                  {getUserName(member.user)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth>
+            <InputLabel id="priority-label">Приоритет</InputLabel>
+            <Select
+              labelId="priority-label"
+              value={newTask.priority || 'medium'}
+              label="Приоритет"
+              onChange={e => setNewTask(prev => ({ ...prev, priority: e.target.value as TaskPriority }))}
+            >
+              <MenuItem value="low">Низкий</MenuItem>
+              <MenuItem value="medium">Средний</MenuItem>
+              <MenuItem value="high">Высокий</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField
+            label="Срок"
+            type="date"
+            value={newTask.dueDate || ''}
+            onChange={e => setNewTask(prev => ({ ...prev, dueDate: e.target.value }))}
+            InputLabelProps={{ shrink: true }}
+          />
           <Button
             variant="contained"
             onClick={handleCreateTask}
@@ -384,6 +464,29 @@ export const ProjectPage: React.FC = () => {
           </Button>
         </Box>
       </Paper>
+
+      {/* Диалог подтверждения удаления проекта */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Подтверждение удаления</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Вы уверены, что хотите удалить проект &quot;{project.name}&quot;? Это действие невозможно отменить.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Отмена</Button>
+          <Button
+            onClick={deleteProject}
+            color="error"
+            disabled={deletingProject}
+          >
+            Удалить
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
