@@ -128,3 +128,20 @@ def get_project_tasks(
     # Получаем все задачи проекта
     tasks = db.query(models.Task).filter(models.Task.project_id == project_id).all()
     return tasks
+
+@router.post("/{project_id}/tasks", response_model=schemas.TaskOut)
+def create_task_for_project(
+    project_id: int,
+    task: schemas.TaskCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    # Проверка на существование проекта и прав доступа
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Проект не найден")
+    if current_user.id != project.owner_id:
+        raise HTTPException(status_code=403, detail="У вас нет прав на добавление задач в этот проект")
+
+    # Создание задачи
+    return crud.create_task(db=db, task=task, user_id=current_user.id, project_id=project_id)

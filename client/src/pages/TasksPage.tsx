@@ -89,7 +89,7 @@ export const TasksPage = () => {
     const fetchTasks = async () => {
       try {
         // Запрос к API для получения задач
-        const response = await fetch('http://127.0.0.1:8000/api/tasks'); 
+        const response = await fetch('http://127.0.0.1:8000/tasks'); 
         if (!response.ok) {
           throw new Error('Не удалось загрузить задачи');
         }
@@ -121,7 +121,7 @@ export const TasksPage = () => {
   if (typeof user !== 'string') return user;
 
   try {
-    const response = await fetch(`http://127.0.0.1:8000/api/users/${user}`);
+    const response = await fetch(`http://127.0.0.1:8000/users/${user}`);
     if (!response.ok) {
       throw new Error('Ошибка загрузки пользователя');
     }

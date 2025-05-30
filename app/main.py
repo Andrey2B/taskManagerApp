@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import projects, users, tasks, roles, voice  # Импорт роутеров
+from app.routers import avatar, projects, settings, users, tasks, roles, voice  # Импорт роутеров
 from app.database import engine
 from app import models
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +20,8 @@ app.include_router(tasks.router)
 app.include_router(roles.router)
 app.include_router(voice.router)
 app.include_router(projects.router)
+app.include_router(settings.router)
+app.include_router(avatar.router)
 
 @app.get("/")
 def read_root():

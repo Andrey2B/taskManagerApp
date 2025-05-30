@@ -12,7 +12,7 @@ class User(Base):
     hashed_password = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
-    avatar = Column(String, nullable=True)
+    avatar = Column(String, default="/default-avatar.png")
 
     projects = relationship("Project", secondary="project_user", back_populates="members")
     tasks = relationship("Task", back_populates="user")
@@ -63,16 +63,18 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True)
-    description = Column(String)
-    priority = Column(Integer)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    priority = Column(String, nullable=True)  # 'low', 'medium' и т.п.
     status = Column(String, default="поставлена")
-    user_id = Column(Integer, ForeignKey("users.id"))
-    project_id = Column(Integer, ForeignKey("projects.id"))
+    due_date = Column(DateTime, nullable=True)  # соответствие dueDate
+    type = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # assignedTo
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
 
     user = relationship("User", back_populates="tasks")
     project = relationship("Project", back_populates="tasks")
-
+    
     comments = relationship("TaskComment", back_populates="task", cascade="all, delete-orphan")
 
 

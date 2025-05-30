@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from typing import Literal, Optional, List
 from datetime import datetime
+
 
 # --- Пользователи ---
 class UserCreate(BaseModel):
@@ -11,9 +12,11 @@ class UserCreate(BaseModel):
     class Config:
         orm_mode = True
 
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
 
 class UserOut(BaseModel):
     id: int
@@ -24,18 +27,22 @@ class UserOut(BaseModel):
     class Config:
         orm_mode = True
 
+
 # --- Проекты ---
 class ProjectBase(BaseModel):
     name: str
     description: Optional[str] = None
 
+
 class ProjectCreate(ProjectBase):
-    status: str
+    status: Optional[str] = "planning"  # Лучше сделать необязательным с дефолтом
+
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
+
 
 class ProjectOut(ProjectBase):
     id: int
@@ -45,31 +52,45 @@ class ProjectOut(ProjectBase):
     class Config:
         orm_mode = True
 
+
 # --- Задачи ---
 class TaskBase(BaseModel):
     title: str
-    description: str
-    priority: int
-    status: Optional[str] = "Поставлена"
+    description: Optional[str] = None
+    priority: Optional[int] = None
+    status: Optional[str] = "поставлена"  # статус по умолчанию
 
-class TaskCreate(TaskBase):
-    project_id: Optional[int] = None
+
+class TaskCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    assigned_to: Optional[int] = None  # лучше int, чтобы связывать с User.id
+    due_date: Optional[datetime] = None
+    priority: Optional[str] = None  # low, medium, high, critical
+    type: str  # marketing, development, design, research
+    status: Optional[str] = "поставлена"  # добавлено поле status с дефолтом
+
+    class Config:
+        orm_mode = True
+
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     priority: Optional[int] = None
     status: Optional[str] = None
+    user_id: Optional[int] = None
     project_id: Optional[int] = None
+
 
 class TaskOut(TaskBase):
     id: int
-    project_id: str  # Обновлено на str
-    created_at: datetime
-    updated_at: Optional[datetime]
+    user_id: Optional[int] = None
+    project_id: int
 
     class Config:
         orm_mode = True
+
 
 # --- Комментарии ---
 class TaskCommentCreate(BaseModel):
@@ -79,12 +100,14 @@ class TaskCommentCreate(BaseModel):
     class Config:
         orm_mode = True
 
+
 class TaskCommentOut(TaskCommentCreate):
     id: int
     created_at: datetime
 
     class Config:
         orm_mode = True
+
 
 # --- Роль пользователя в проекте ---
 class UserRole(BaseModel):
@@ -96,7 +119,18 @@ class UserRole(BaseModel):
     class Config:
         orm_mode = True
 
+
 # --- Расширенный проект с задачами и пользователями ---
 class ProjectWithTasksAndUsers(ProjectOut):
     tasks: List[TaskOut]
     members: List[UserOut]
+
+class UserUpdate(BaseModel):
+    name: str
+    email: EmailStr
+    avatar: str
+
+
+class PasswordChange(BaseModel):
+    oldPassword: str
+    newPassword: str
