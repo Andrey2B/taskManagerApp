@@ -18,7 +18,7 @@ export const useTasks = (projectId?: string) => {
       setLoading(true);
       setError('');
       try {
-        const data = await getTasks(projectId, token);
+        const data = await getTasks(projectId);  // Передаем только projectId
         setTasks(data);
       } catch (err) {
         const errorMessage = 'Не удалось загрузить задачи';
@@ -30,7 +30,6 @@ export const useTasks = (projectId?: string) => {
     };
 
     fetchTasks();
-
   }, [token, projectId, enqueueSnackbar]);
 
   return { tasks, loading, error };

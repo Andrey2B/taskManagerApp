@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { CreateTaskDto, UpdateTaskDto, Task } from '../types/task';
+import { CreateTaskDto, Task } from '../types/task';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000';
 
@@ -13,8 +13,8 @@ const getToken = () => {
 export const addTask = async (projectId: string, taskData: CreateTaskDto): Promise<Task> => {
   try {
     const response = await axios.post<Task>(
-      `${API_URL}/projects/${projectId}/tasks`, 
-      taskData, 
+      `${API_URL}/projects/${projectId}/tasks`,
+      taskData,
       { headers: { Authorization: `Bearer ${getToken()}` } }
     );
     return response.data;
@@ -38,8 +38,8 @@ export const getTaskById = async (taskId: string): Promise<Task> => {
   }
 };
 
-// Получить задачи
-export const getTasks = async (projectId: string | undefined, token: string): Promise<Task[]> => {
+// Получить список задач
+export const getTasks = async (projectId: string | undefined): Promise<Task[]> => {
   try {
     const response = await axios.get<Task[]>(
       `${API_URL}/tasks/`,
@@ -52,24 +52,33 @@ export const getTasks = async (projectId: string | undefined, token: string): Pr
   }
 };
 
-
-// Обновить задачу
-export const updateTask = async (taskId: string, taskData: UpdateTaskDto): Promise<Task> => {
+// Обновить задачу с поддержкой FormData (для файлов)
+export const updateTask = async (taskId: string, taskData: FormData): Promise<Task> => {
   try {
-    const response = await axios.put<Task>(
+    const response = await axios.patch<Task>(
       `${API_URL}/tasks/${taskId}`,
       taskData,
-      { headers: { Authorization: `Bearer ${getToken()}` } }
+      {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          // Не указываем 'Content-Type', axios выставит multipart/form-data автоматически
+        },
+      }
     );
     return response.data;
-  } catch (error) {
-    console.error('Ошибка при обновлении задачи:', error);
+  } catch (error: any) {
+    console.error('Ошибка при обновлении задачи:', error?.response?.data || error.message);
     throw error;
   }
 };
 
 // Удалить задачу
 export const deleteTask = async (taskId: string): Promise<{ message: string }> => {
+  const token = getToken();
+  if (!token) {
+    throw new Error('Токен авторизации отсутствует');
+  }
+
   try {
     const response = await axios.delete<{ message: string }>(
       `${API_URL}/tasks/${taskId}`,

@@ -48,6 +48,7 @@ export interface TaskWithUser extends Task {
 export type UserOrString = User | string;
 
 export interface Attachment {
+  split(arg0: string): unknown;
   id: string;
   name: string;
   url: string;
