@@ -17,6 +17,14 @@ interface TaskCardProps {
 }
 
 const TaskCard = ({ task, readOnly = false }: TaskCardProps) => {
+  // Мапа русских названий для статусов
+  const statusLabels: Record<string, string> = {
+    todo: 'К выполнению',
+    in_progress: 'В процессе',
+    done: 'Выполнено',
+    blocked: 'Заблокировано',
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -38,6 +46,8 @@ const TaskCard = ({ task, readOnly = false }: TaskCardProps) => {
         return 'warning';
       case 'done':
         return 'success';
+      case 'blocked':
+        return 'error';
       default:
         return 'default';
     }
@@ -83,7 +93,7 @@ const TaskCard = ({ task, readOnly = false }: TaskCardProps) => {
 
           <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
             <Chip
-              label={task.status}
+              label={statusLabels[task.status] || task.status}
               size="small"
               color={getStatusColor(task.status)}
             />

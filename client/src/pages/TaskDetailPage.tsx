@@ -6,8 +6,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import { Task } from '../types/task';
 import { updateTask, deleteTask, getTaskById } from '../api/tasks';
+import { taskStatusOptions } from '../components/tasks/TaskStatus';
 
-const statusOptions = ['todo', 'in_progress', 'done'];
 const MAX_FILES = 5;
 
 const TaskDetailPage: React.FC = () => {
@@ -88,6 +88,7 @@ const TaskDetailPage: React.FC = () => {
       const updatedTask = await updateTask(taskId, formData);
       setTask(updatedTask);
       enqueueSnackbar('Задача обновлена', { variant: 'success' });
+      navigate(-1)
     } catch (error) {
       console.error('Ошибка при обновлении задачи:', error);
       enqueueSnackbar('Ошибка при сохранении', { variant: 'error' });
@@ -152,9 +153,9 @@ const TaskDetailPage: React.FC = () => {
         onChange={handleChange}
         margin="normal"
       >
-        {statusOptions.map((status) => (
-          <MenuItem key={status} value={status}>
-            {status}
+        {taskStatusOptions.map(({ value, label }) => (
+          <MenuItem key={value} value={value}>
+            {label}
           </MenuItem>
         ))}
       </TextField>
