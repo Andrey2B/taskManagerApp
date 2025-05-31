@@ -90,21 +90,16 @@ def create_task(db: Session, task: schemas.TaskCreate, user_id: int, project_id:
     db.refresh(db_task)
     return db_task
 
-def update_task(db: Session, task_id: int, task: schemas.TaskUpdate):
-    db_task = db.query(models.Task).filter(models.Task.id == task_id).first()
-    if not db_task:
+def update_task(db: Session, task_id: int, task_update: schemas.TaskUpdate):
+    task = db.query(models.Task).filter(models.Task.id == task_id).first()
+    if not task:
         return None
-    for key, value in task.dict(exclude_unset=True).items():
-        # Если ключ assignedTo или dueDate, нужно переименовать в поля модели
-        if key == "assignedTo":
-            setattr(db_task, "assigned_to_id", value)
-        elif key == "dueDate":
-            setattr(db_task, "due_date", value)
-        else:
-            setattr(db_task, key, value)
+    update_data = task_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(task, key, value)
     db.commit()
-    db.refresh(db_task)
-    return db_task
+    db.refresh(task)
+    return task
 
 def delete_task(db: Session, task_id: int):
     db_task = db.query(models.Task).filter(models.Task.id == task_id).first()

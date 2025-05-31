@@ -1,3 +1,4 @@
+from enum import Enum
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional, List
 from datetime import datetime
@@ -134,3 +135,34 @@ class UserUpdate(BaseModel):
 class PasswordChange(BaseModel):
     oldPassword: str
     newPassword: str
+
+
+class TaskStatus(str, Enum):
+    todo = 'todo'
+    in_progress = 'in_progress'
+    done = 'done'
+    blocked = 'blocked'
+
+class TaskPriority(str, Enum):
+    low = 'low'
+    medium = 'medium'
+    high = 'high'
+    critical = 'critical'
+
+class TaskType(str, Enum):
+    marketing = 'marketing'
+    development = 'development'
+    design = 'design'
+    research = 'research'
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    assignedTo: Optional[str] = None
+    dueDate: Optional[str] = None
+    priority: Optional[TaskPriority] = None
+    type: Optional[TaskType] = None
+    status: Optional[TaskStatus] = None
+
+    class Config:
+        orm_mode = True

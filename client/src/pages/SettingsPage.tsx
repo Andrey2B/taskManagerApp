@@ -65,8 +65,9 @@ const uploadAvatar = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('avatar', file);
 
-  const response = await fetch('/upload-avatar', {
+  const response = await fetch('http://127.0.0.1:8000/upload-avatar', {
     method: 'POST',
+    
     body: formData,
   });
 
