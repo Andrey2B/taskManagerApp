@@ -164,7 +164,12 @@ const TaskDetailPage: React.FC = () => {
           <Typography variant="subtitle1">Прикреплённые файлы:</Typography>
           {task.attachments.map((file, index) => (
             <Box key={index}>
-              <a href={file.url} target="_blank" rel="noopener noreferrer">
+              <a
+                href={file.url}
+                download={file.name || file.url.split('/').pop()}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {file.name || file.url.split('/').pop()}
               </a>
             </Box>
