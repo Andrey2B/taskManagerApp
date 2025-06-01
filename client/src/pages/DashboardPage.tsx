@@ -44,37 +44,60 @@ const DashboardPage: React.FC = () => {
 
   // Функция для записи аудио и отправки его на сервер
   const startVoiceRecognition = async () => {
-  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
+      sampleRate: 16000,
+    });
 
-  // Код для загрузки worklet через fetch
-  const workletCode = `
-    class RecorderProcessor extends AudioWorkletProcessor {
-      process(inputs) {
-        const input = inputs[0];
-        if (input.length > 0) this.port.postMessage(input[0]);
-        return true;
-      }
+    // Проверяем поддержку AudioWorklet до его использования
+    if ('AudioWorklet' in window) {
+      console.log('AudioWorklet поддерживается');
+    } else {
+      console.error('AudioWorklet не поддерживается в этом браузере');
+      setVoiceCommand('AudioWorklet не поддерживается в этом браузере');
+      return;
     }
-    registerProcessor('recorder-processor', RecorderProcessor);
-  `;
-  
-  const blob = new Blob([workletCode], { type: 'application/javascript' });
-  const moduleURL = URL.createObjectURL(blob);
 
-  try {
-    // Загружаем модуль
-    await audioContext.audioWorklet.addModule(moduleURL);
-  } catch (error) {
-    console.error("Error loading AudioWorklet: ", error);
-    setVoiceCommand('Error loading AudioWorklet');
-    return;
-  }
+    try {
+      console.log('Пытаемся загрузить AudioWorklet...');
 
-  // Далее ваша логика записи и обработки аудио
-};
+      // Убедитесь, что файл доступен в публичной папке (например, public/salute_speech.js)
+      await audioContext.audioWorklet.addModule('/salute_speech.js'); // Путь к файлу
+      console.log('AudioWorklet загружен.');
+      console.log('AudioWorklet загружен1.');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('AudioWorklet загружен2.');
+      const source = audioContext.createMediaStreamSource(stream);
+      console.log('AudioWorklet загружен3.');
+      const recorderNode = new AudioWorkletNode(audioContext, 'recorder-processor');
+      console.log('AudioWorklet загружен.');
+      const audioChunks: Float32Array[] = [];
+      recorderNode.port.onmessage = (e) => {
+        audioChunks.push(new Float32Array(e.data));
+      };
 
+      source.connect(recorderNode);
+      recorderNode.connect(audioContext.destination);
 
+      // Останавливаем через 5 секунд
+      setTimeout(async () => {
+        recorderNode.disconnect();
+        source.disconnect();
+        stream.getTracks().forEach((t) => t.stop());
 
+        const samples = flatten(audioChunks);
+        const pcmBlob = encodePCM(samples);
+        await sendAudioToServer(pcmBlob);
+
+        audioContext.close();
+      }, 5000);
+    
+    } catch (error: any) {
+      console.error('Ошибка при подключении к AudioWorklet:', error);
+      setVoiceCommand('Ошибка при подключении к AudioWorklet: ' + error.message);
+    }
+  };
+
+  // Функция для преобразования аудио в один массив
   const flatten = (chunks: Float32Array[]) => {
     let len = 0;
     for (const c of chunks) len += c.length;
@@ -87,6 +110,7 @@ const DashboardPage: React.FC = () => {
     return result;
   };
 
+  // Функция для кодирования аудио в формат PCM
   const encodePCM = (samples: Float32Array) => {
     const buffer = new ArrayBuffer(samples.length * 2);
     const view = new DataView(buffer);
@@ -97,6 +121,7 @@ const DashboardPage: React.FC = () => {
     return new Blob([view], { type: 'audio/x-pcm;bit=16;rate=16000' });
   };
 
+  // Отправка аудио на сервер для распознавания
   const sendAudioToServer = async (pcmBlob: Blob) => {
     const formData = new FormData();
     formData.append('file', pcmBlob, 'audio.pcm');
@@ -109,7 +134,8 @@ const DashboardPage: React.FC = () => {
 
       const result = await response.json();
       setVoiceCommand(result.text || 'Команда не распознана');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Ошибка при распознавании:', error);
       setVoiceCommand('Ошибка при распознавании');
     }
   };
