@@ -14,65 +14,92 @@ router = APIRouter(prefix="/voice", tags=["voice"])
 cached_token = None
 token_expires_at = datetime.utcnow()
 
+
 async def get_access_token():
     global cached_token, token_expires_at
     now = datetime.utcnow()
     if cached_token and now < token_expires_at:
         return cached_token
 
-    async with httpx.AsyncClient() as client:
-        rq_uid = str(uuid.uuid4())
-        response = await client.post(
-            OAUTH_URL,
-            data=OAUTH_SCOPE,
-            headers={
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json',
-                'RqUID': rq_uid,
-                'Authorization': BASIC_AUTH_KEY
-            },
-            timeout=30
-        )
+    try:
+        async with httpx.AsyncClient(verify=False) as client:
+            rq_uid = str(uuid.uuid4())
+            response = await client.post(
+                OAUTH_URL,
+                data=OAUTH_SCOPE,
+                headers={
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json',
+                    'RqUID': rq_uid,
+                    'Authorization': BASIC_AUTH_KEY
+                },
+                timeout=30
+            )
+    except httpx.RequestError as e:
+        print(f"[OAuth] Request error: {e}")
+        raise HTTPException(status_code=500, detail="OAuth connection error")
 
-        if response.status_code != 200 or 'access_token' not in response.json():
-            print(f"OAuth error: {response.status_code} - {response.json()}")
-            raise HTTPException(status_code=500, detail="OAuth token failed")
+    try:
+        json_data = response.json()
+    except Exception:
+        print(f"[OAuth] Invalid JSON: {response.text}")
+        raise HTTPException(status_code=500, detail="Invalid OAuth response")
 
-        cached_token = response.json()['access_token']
-        expires_in = response.json()['expires_in']
-        token_expires_at = now + timedelta(seconds=expires_in - 5)
-        return cached_token
+    if response.status_code != 200 or 'access_token' not in json_data:
+        print(f"[OAuth] Failed: {response.status_code} - {json_data}")
+        raise HTTPException(status_code=500, detail="OAuth token failed")
+
+    cached_token = json_data['access_token']
+    expires_in = json_data.get('expires_in', 3600)
+    token_expires_at = now + timedelta(seconds=expires_in - 5)
+    return cached_token
+
 
 class VoiceResponse(BaseModel):
     text: str
 
-# Исправлен путь на /recognize чтобы совпадать с фронтендом
-@router.post("/recognize", response_model=VoiceResponse)
+
+@router.post("/recognize/", response_model=VoiceResponse)
 async def voice_recognize(file: UploadFile = File(...)):
     try:
         token = await get_access_token()
         audio_data = await file.read()
 
-        async with httpx.AsyncClient() as client:
+        # Указываем корректный Content-Type (см. требования Sber API)
+        content_type = "audio/x-pcm;bit=16;rate=16000"
+
+        async with httpx.AsyncClient(verify=False) as client:
             response = await client.post(
                 RECOG_URL,
                 data=audio_data,
                 headers={
                     'Authorization': f'Bearer {token}',
-                    'Content-Type': file.content_type or 'audio/wav'
+                    'Content-Type': content_type
                 },
                 timeout=30
             )
 
-        if response.status_code != 200 or 'result' not in response.json():
-            print(f"ASR error: {response.status_code} - {response.json()}")
+        try:
+            json_data = response.json()
+        except Exception:
+            print(f"[ASR] Invalid JSON: {response.text}")
+            raise HTTPException(status_code=500, detail="ASR returned invalid JSON")
+
+        if response.status_code != 200 or 'result' not in json_data:
+            print(f"[ASR] Error: {response.status_code} - {json_data}")
             raise HTTPException(status_code=500, detail="ASR failed")
 
-        return VoiceResponse(text=response.json()['result'])
+        result = json_data['result']
+        if isinstance(result, list):
+            result = ' '.join(r.strip() for r in result if r.strip())
+        elif isinstance(result, str):
+            result = result.strip()
+        else:
+            result = ""
+
+        return VoiceResponse(text=result)
 
     except Exception as e:
-        print(f"Voice handler error: {e}")
+        print(f"[Voice Handler] Error: {e}")
         raise HTTPException(status_code=500, detail="Voice recognition error")
 
-app = FastAPI()
-app.include_router(router)

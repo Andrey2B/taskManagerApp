@@ -1,4 +1,5 @@
 let audioContext;
+
 class RecorderProcessor extends AudioWorkletProcessor {
   process(inputs) {
     const input = inputs[0];
@@ -11,6 +12,7 @@ class RecorderProcessor extends AudioWorkletProcessor {
 }
 
 registerProcessor('recorder-processor', RecorderProcessor);
+
 async function startRecording() {
   if (!window.AudioContext && !window.webkitAudioContext) {
     alert("Ваш браузер не поддерживает AudioContext");
@@ -19,10 +21,9 @@ async function startRecording() {
 
   audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
 
-  // Код AudioWorkletProcessor с правильной сигнатурой process()
   const workletCode = `
     class RecorderProcessor extends AudioWorkletProcessor {
-      process(inputs, outputs, parameters) {
+      process(inputs) {
         const input = inputs[0];
         if (input && input.length > 0) {
           const channelData = input[0];
@@ -41,8 +42,8 @@ async function startRecording() {
     await audioContext.audioWorklet.addModule(moduleURL);
     console.log("AudioWorklet модуль успешно загружен");
   } catch (err) {
-    console.error("Ошибка при загрузке AudioWorklet модуля:", err);
-    alert("Ошибка загрузки голосового модуля. Проверьте безопасность страницы и HTTPS.");
+    console.error("Ошибка загрузки AudioWorklet:", err);
+    alert("Ошибка загрузки голосового модуля. Проверьте HTTPS и безопасность.");
     return;
   }
 
@@ -59,7 +60,6 @@ async function startRecording() {
   const recorderNode = new AudioWorkletNode(audioContext, 'recorder-processor');
 
   const audioChunks = [];
-
   recorderNode.port.onmessage = e => {
     audioChunks.push(new Float32Array(e.data));
   };
@@ -67,7 +67,7 @@ async function startRecording() {
   source.connect(recorderNode);
   recorderNode.connect(audioContext.destination);
 
-  console.log("Начинается запись голоса...");
+  console.log("Запись началась...");
 
   setTimeout(async () => {
     recorderNode.disconnect();
@@ -79,7 +79,7 @@ async function startRecording() {
 
     try {
       await sendAudio(pcmBlob);
-      console.log("Аудио успешно отправлено на сервер");
+      console.log("Аудио отправлено на сервер");
     } catch (err) {
       console.error("Ошибка при отправке аудио:", err);
     }
@@ -112,32 +112,37 @@ function encodePCM(samples) {
 
 async function sendAudio(pcmBlob) {
   const formData = new FormData();
-  formData.append('audio', pcmBlob, 'rec.pcm');
-  const resp = await fetch('https://127.0.0.1:8000/voice-to-text', {
-    method: 'POST',
-    body: formData
-  });
-  const json = await resp.json();
-  const txt = (json.text || '').toString().toLowerCase();
+  formData.append('file', pcmBlob, 'rec.pcm'); // имя поля должно быть 'file'
 
-  if (txt) handleVoiceCommand(txt);
+  const response = await fetch('https://127.0.0.1:8000/voice/recognize/', {
+    method: 'POST',
+    body: formData,
+  });
+
+  const json = await response.json();
+  const text = (json.text || '').toString().toLowerCase();
+
+  if (text) handleVoiceCommand(text);
 }
 
 function handleVoiceCommand(command) {
   console.log('Распознано:', command);
 
-  if (command.includes('следующий слайд')) document.querySelector('.progress-item:nth-child(2)')?.click();
-  else if (command.includes('категория один')) document.querySelectorAll('.category')[0]?.click();
-  else if (command.includes('категория два')) document.querySelectorAll('.category')[1]?.click();
-  else if (command.includes('назад')) window.history.back();
-  else if (command.includes('обновить')) window.location.reload();
-  else if (command.includes('профиль')) document.getElementById('profile-button')?.click();
-  else if (command.includes('каталог')) document.getElementById('voice_katalog')?.click();
-  else if (command.includes('корзина')) document.getElementById('voice_cart')?.click();
+  const cleaned = command.trim().toLowerCase().replace(/[.,!?;:]/g, '');
+  
+  if (cleaned.includes('следующий слайд')) document.querySelector('.progress-item:nth-child(2)')?.click();
+  else if (cleaned.includes('категория один')) document.querySelectorAll('.category')[0]?.click();
+  else if (cleaned.includes('категория два')) document.querySelectorAll('.category')[1]?.click();
+  else if (cleaned.includes('назад')) window.history.back();
+  else if (cleaned.includes('обновить')) {window.location.reload(); console.log("обновить");}
+
+  else if (cleaned.includes('профиль')) document.getElementById('profile-button')?.click();
+  else if (cleaned.includes('каталог')) document.getElementById('voice_katalog')?.click();
+  else if (cleaned.includes('корзина')) document.getElementById('voice_cart')?.click();
   else alert('Команда не распознана: ' + command);
 }
 
-// Добавляем кнопку, если есть DOM
+// Кнопка запуска записи
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     const btn = document.createElement('button');
@@ -155,3 +160,4 @@ if (typeof document !== 'undefined') {
     document.body.appendChild(btn);
   });
 }
+console.log("12");

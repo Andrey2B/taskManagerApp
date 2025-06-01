@@ -70,6 +70,7 @@ const DashboardPage: React.FC = () => {
       console.log('AudioWorklet загружен3.');
       const recorderNode = new AudioWorkletNode(audioContext, 'recorder-processor');
       console.log('AudioWorklet загружен.');
+      
       const audioChunks: Float32Array[] = [];
       recorderNode.port.onmessage = (e) => {
         audioChunks.push(new Float32Array(e.data));
