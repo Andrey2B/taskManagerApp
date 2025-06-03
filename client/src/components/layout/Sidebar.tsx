@@ -30,11 +30,12 @@ const Sidebar: React.FC = () => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { text: 'Главная', icon: <DashboardIcon />, path: '/' },
-    { text: 'Проекты', icon: <ProjectsIcon />, path: '/projects' },
-    { text: 'Уведомления', icon: <NotificationsIcon />, path: '/notifications' },
-    { text: 'Настройки', icon: <SettingsIcon />, path: '/settings' },
+    { text: 'Главная', icon: <DashboardIcon />, path: '/', id: 'voice_home' },
+    { text: 'Проекты', icon: <ProjectsIcon />, path: '/projects', id: 'voice_projects' },
+    { text: 'Уведомления', icon: <NotificationsIcon />, path: '/notifications', id: 'voice_notifications' },
+    { text: 'Настройки', icon: <SettingsIcon />, path: '/settings', id: 'voice_settings' },
   ];
+  
 
   const handleNavigation = (path: string) => {
     if (location.pathname !== path) {
@@ -62,6 +63,7 @@ const Sidebar: React.FC = () => {
       <List>
         {menuItems.map((item) => (
           <ListItemButton
+            id={item.id}
             key={item.text}
             selected={location.pathname === item.path || location.pathname.startsWith(item.path + '/')}
             onClick={() => handleNavigation(item.path)}

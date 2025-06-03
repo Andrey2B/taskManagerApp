@@ -129,24 +129,36 @@ function handleVoiceCommand(command) {
   console.log('Распознано:', command);
 
   const cleaned = command.trim().toLowerCase().replace(/[.,!?;:]/g, '');
-  
-  if (cleaned.includes('следующий слайд')) document.querySelector('.progress-item:nth-child(2)')?.click();
-  else if (cleaned.includes('категория один')) document.querySelectorAll('.category')[0]?.click();
-  else if (cleaned.includes('категория два')) document.querySelectorAll('.category')[1]?.click();
-  else if (cleaned.includes('назад')) window.history.back();
-  else if (cleaned.includes('обновить')) {window.location.reload(); console.log("обновить");}
 
-  else if (cleaned.includes('профиль')) document.getElementById('profile-button')?.click();
-  else if (cleaned.includes('каталог')) document.getElementById('voice_katalog')?.click();
-  else if (cleaned.includes('корзина')) document.getElementById('voice_cart')?.click();
-  else alert('Команда не распознана: ' + command);
+  if (cleaned.includes('проекты')) {
+    console.log('Переход на проекты');
+    document.getElementById('voice_projects')?.click();
+  }
+  else if (cleaned.includes('уведомления')) {
+    document.getElementById('voice_notifications')?.click();
+  }
+  else if (cleaned.includes('главная')) {
+    document.getElementById('voice_home')?.click();
+  }
+  else if (cleaned.includes('назад')) {
+    window.history.back();
+  }
+  else if (cleaned.includes('обновить')) {
+    window.location.reload();
+  }
+  else if (cleaned.includes('настройки')) {
+    document.getElementById('voice_settings')?.click();
+  }
+  else {
+    alert('Команда не распознана: ' + command);
+  }
 }
 
 // Кнопка запуска записи
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     const btn = document.createElement('button');
-    btn.textContent = '🎤 Голос';
+    btn.textContent = 'Голос';
     Object.assign(btn.style, {
       position: 'fixed',
       bottom: '20px',
