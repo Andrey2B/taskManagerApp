@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Button, Container, TextField, Typography, MenuItem } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
@@ -17,6 +17,18 @@ export const NewProjectPage: React.FC = () => {
   const [errors, setErrors] = useState<{ name?: string; status?: string }>({});
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const voiceCreateListener = () => {
+      handleSubmit();
+    };
+  
+    document.addEventListener('openCreateNewProjectModal', voiceCreateListener);
+  
+    return () => {
+      document.removeEventListener('openCreateNewProjectModal', voiceCreateListener);
+    };
+  }, [formData]);
 
   const handleChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({
@@ -45,7 +57,7 @@ export const NewProjectPage: React.FC = () => {
       const token = localStorage.getItem('token') || '';
       const dataToSend: CreateProjectData = {
         ...formData,
-        role: 'owner', // 👈 Устанавливаем роль вручную
+        role: 'owner',
       };
 
       const createdProject = await createProject(dataToSend, token);
@@ -110,7 +122,7 @@ export const NewProjectPage: React.FC = () => {
           onClick={handleSubmit}
           disabled={loading}
         >
-          Создать проект
+          Создать
         </Button>
       </Box>
     </Container>

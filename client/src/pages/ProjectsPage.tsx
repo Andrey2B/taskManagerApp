@@ -15,13 +15,13 @@ import {
 import { Add, Search, FilterList } from '@mui/icons-material';
 import { Project } from '../types/project';
 import { getProjects } from '../api/projects';
-import { getCurrentUser } from '../api/auth'; // Импортируем новый запрос
+import { getCurrentUser } from '../api/auth';
 
 export const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentUser, setCurrentUser] = useState<any>(null); // Состояние для хранения информации о текущем пользователе
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,6 +46,16 @@ export const ProjectsPage = () => {
       } finally {
         setLoading(false);
       }
+
+      const openCreateProjectListener = () => {
+        handleCreateProject();
+      };
+    
+      document.addEventListener('openCreateProjectModal', openCreateProjectListener);
+    
+      return () => {
+        document.removeEventListener('openCreateProjectModal', openCreateProjectListener);
+      };
     };
 
     fetchProjects();

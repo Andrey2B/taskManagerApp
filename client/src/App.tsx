@@ -118,7 +118,7 @@ const App: React.FC = () => {
           {/* Страница 404 */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-        <VoiceButton />
+        <VoiceButton projects={[]} />
       </CustomThemeProvider>
     </AuthProvider>
   );

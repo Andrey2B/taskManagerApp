@@ -2,8 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Typography } from '@mui/material';
 import MicIcon from '@mui/icons-material/Mic';
+import { Project } from '../types/project';
 
-const VoiceButton = () => {
+type VoiceButtonProps = {
+  projects: Project[];
+};
+
+const VoiceButton: React.FC<VoiceButtonProps> = ({ projects }) => {
   const navigate = useNavigate();
   const [voiceCommand, setVoiceCommand] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -33,6 +38,28 @@ const VoiceButton = () => {
     else if (cleaned.includes('выход') || cleaned.includes('выйти')) {
       // Логика выхода
       console.log('Выход из системы');
+    }
+    else if (cleaned.includes('создать проект')) {
+      document.dispatchEvent(new CustomEvent('openCreateProjectModal'));
+    }
+    if (cleaned.startsWith('открыть проект ')) {
+      const projectName = cleaned.replace('открыть проект ', '').trim();
+
+      // Поиск проекта по названию (поиск без учета регистра)
+      const project = projects.find((p: { name: string; }) => p.name.toLowerCase() === projectName.toLowerCase());
+
+      if (project) {
+        navigate(`/projects/${project.id}`);
+      } else {
+        setVoiceCommand(`Проект с названием "${projectName}" не найден`);
+      }
+      return;
+    }
+    else if (cleaned.includes('создать')) {
+      document.dispatchEvent(new CustomEvent('openCreateNewProjectModal'));
+    }
+    else if (cleaned.includes('создать задачу')) {
+      document.dispatchEvent(new CustomEvent('openCreateTaskModal'));
     }
     else {
       console.log('Команда не распознана:', command);
