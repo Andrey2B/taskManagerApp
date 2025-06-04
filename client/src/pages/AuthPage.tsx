@@ -18,9 +18,19 @@ export const AuthPage: React.FC = () => {
   
   const handleError = (error: any) => {
     console.error('Ошибка авторизации:', error);
-    enqueueSnackbar('Ошибка входа: ' + error.message || 'Неверные данные', {
-      variant: 'error',
-    });
+  
+    // Проверка на конкретное сообщение от сервера
+    if (error?.response?.data?.message) {
+      enqueueSnackbar(error.response.data.message, { variant: 'error' });
+    } 
+    // Если есть error.message — показываем его
+    else if (error?.message) {
+      enqueueSnackbar(error.message, { variant: 'error' });
+    } 
+    // В остальных случаях — дефолтное сообщение
+    else {
+      enqueueSnackbar('Произошла ошибка. Попробуйте снова.', { variant: 'error' });
+    }
   };
 
   return (

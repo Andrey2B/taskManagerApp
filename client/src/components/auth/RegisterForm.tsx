@@ -58,14 +58,19 @@ export const RegisterForm = ({ onSuccess, onError }: RegisterFormProps) => {
       });
 
       onSuccess?.();
+      navigate('/projects');
+    } catch (err: any) {
+      console.error('Ошибка регистрации:', err);
 
-      // ✅ После успешной регистрации переходим на страницу проектов
-      navigate('/projects'); // Убедись, что этот путь есть в ваших маршрутах
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Ошибка регистрации';
-      setError(message);
-      onError?.(message);
+      if (err?.response?.status === 409) {
+        setError('Пользователь с таким email уже существует');
+      } else if (err?.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Ошибка регистрации');
+      }
+
+      onError?.(err);
     } finally {
       setIsLoading(false);
     }
