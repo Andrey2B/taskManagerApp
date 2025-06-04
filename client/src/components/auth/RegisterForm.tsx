@@ -41,35 +41,33 @@ export const RegisterForm = ({ onSuccess, onError }: RegisterFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     if (formData.password !== formData.confirmPassword) {
       setError('Пароли не совпадают');
       return;
     }
-
+  
     setIsLoading(true);
     setError('');
-
+  
     try {
       await register({
         name: formData.name,
         email: formData.email,
         password: formData.password,
       });
-
+  
       onSuccess?.();
       navigate('/projects');
     } catch (err: any) {
       console.error('Ошибка регистрации:', err);
-
-      if (err?.response?.status === 409) {
-        setError('Пользователь с таким email уже существует');
-      } else if (err?.response?.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError('Ошибка регистрации');
-      }
-
+  
+      const message =
+        err?.response?.data?.message ||
+        err?.response?.data?.errors?.[0]?.message ||
+        'Ошибка регистрации';
+  
+      setError(message);
       onError?.(err);
     } finally {
       setIsLoading(false);
