@@ -18,6 +18,7 @@ import { CustomThemeProvider } from './context/ThemeContext';
 import { NewProjectPage } from './pages/NewProjectPage';
 import { Task, CreateTaskDto } from './types/task';
 import { addTask } from './api/tasks';
+import VoiceButton from './components/VoiceButton';
 
 // Обёртка для TaskForm, чтобы получить projectId из URL
 const TaskFormWrapper: React.FC<{
@@ -117,6 +118,7 @@ const App: React.FC = () => {
           {/* Страница 404 */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        <VoiceButton />
       </CustomThemeProvider>
     </AuthProvider>
   );

@@ -125,34 +125,7 @@ async function sendAudio(pcmBlob) {
   if (text) handleVoiceCommand(text);
 }
 
-function handleVoiceCommand(command) {
-  console.log('Распознано:', command);
 
-  const cleaned = command.trim().toLowerCase().replace(/[.,!?;:]/g, '');
-
-  if (cleaned.includes('проекты')) {
-    console.log('Переход на проекты');
-    document.getElementById('voice_projects')?.click();
-  }
-  else if (cleaned.includes('уведомления')) {
-    document.getElementById('voice_notifications')?.click();
-  }
-  else if (cleaned.includes('главная')) {
-    document.getElementById('voice_home')?.click();
-  }
-  else if (cleaned.includes('назад')) {
-    window.history.back();
-  }
-  else if (cleaned.includes('обновить')) {
-    window.location.reload();
-  }
-  else if (cleaned.includes('настройки')) {
-    document.getElementById('voice_settings')?.click();
-  }
-  else {
-    alert('Команда не распознана: ' + command);
-  }
-}
 
 // Кнопка запуска записи
 if (typeof document !== 'undefined') {

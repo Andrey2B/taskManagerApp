@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import FastAPI, APIRouter, File, UploadFile, HTTPException
 from pydantic import BaseModel
 import httpx
-
+import logging
 BASIC_AUTH_KEY = 'Basic N2U5MzY3MDktMTIwYi00OGIyLWFlMTAtYmEwYjZlMDI4MTI4OmNjMzA2ZDM1LWI0NGMtNGFlMy04ODExLWUwNzU5ZjA1NmY1NQ=='
 OAUTH_URL = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth'
 RECOG_URL = 'https://smartspeech.sber.ru/rest/v1/speech:recognize'
@@ -65,7 +65,6 @@ async def voice_recognize(file: UploadFile = File(...)):
         token = await get_access_token()
         audio_data = await file.read()
 
-        # Указываем корректный Content-Type (см. требования Sber API)
         content_type = "audio/x-pcm;bit=16;rate=16000"
 
         async with httpx.AsyncClient(verify=False) as client:
@@ -79,24 +78,28 @@ async def voice_recognize(file: UploadFile = File(...)):
                 timeout=30
             )
 
-        try:
-            json_data = response.json()
-        except Exception:
-            print(f"[ASR] Invalid JSON: {response.text}")
-            raise HTTPException(status_code=500, detail="ASR returned invalid JSON")
-
-        if response.status_code != 200 or 'result' not in json_data:
-            print(f"[ASR] Error: {response.status_code} - {json_data}")
+        json_data = response.json()
+        
+        # Обрабатываем разные форматы ответа от Sber SpeechKit
+        if response.status_code != 200:
             raise HTTPException(status_code=500, detail="ASR failed")
 
-        result = json_data['result']
-        if isinstance(result, list):
-            result = ' '.join(r.strip() for r in result if r.strip())
-        elif isinstance(result, str):
-            result = result.strip()
-        else:
-            result = ""
-
+        result = ""
+        if isinstance(json_data, list):
+            # Если ответ - массив, соединяем элементы
+            result = ' '.join(str(item) for item in json_data if item)
+        elif isinstance(json_data, dict) and 'result' in json_data:
+            # Если ответ - объект с полем result
+            result = json_data['result']
+            if isinstance(result, list):
+                result = ' '.join(str(item) for item in result if item)
+        elif isinstance(json_data, str):
+            result = json_data
+        
+        # Очищаем результат от лишних символов
+        result = result.strip().replace('.', '')
+        print(f"Final result: {result}")
+        
         return VoiceResponse(text=result)
 
     except Exception as e:
