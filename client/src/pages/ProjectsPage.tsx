@@ -12,12 +12,13 @@ import {
   TextField,
   IconButton
 } from '@mui/material';
-import { Add, Search, FilterList } from '@mui/icons-material';
+import { Add, Search, Close } from '@mui/icons-material';
 import { Project } from '../types/project';
 import { getProjects } from '../api/projects';
 import { getCurrentUser } from '../api/auth';
+import VoiceButton from '../components/VoiceButton';
 
-export const ProjectsPage = () => {
+export const ProjectsPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,7 +26,7 @@ export const ProjectsPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProjects = async () => {
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -34,34 +35,32 @@ export const ProjectsPage = () => {
           return;
         }
 
-        // Получаем проекты с использованием токена
         const projectsFromServer = await getProjects(token);
         setProjects(projectsFromServer);
 
-        // Получаем информацию о текущем пользователе без передачи токена в функцию
-        const userFromServer = await getCurrentUser(); // getCurrentUser больше не принимает token как аргумент
+        const userFromServer = await getCurrentUser();
         setCurrentUser(userFromServer);
       } catch (error) {
-        console.error('Ошибка загрузки проектов:', error);
+        console.error('Ошибка загрузки данных:', error);
       } finally {
         setLoading(false);
       }
-
-      const openCreateProjectListener = () => {
-        handleCreateProject();
-      };
-    
-      document.addEventListener('openCreateProjectModal', openCreateProjectListener);
-    
-      return () => {
-        document.removeEventListener('openCreateProjectModal', openCreateProjectListener);
-      };
     };
 
-    fetchProjects();
+    fetchData();
+
+    const openCreateProjectListener = () => {
+      handleCreateProject();
+    };
+
+    document.addEventListener('openCreateProjectModal', openCreateProjectListener);
+
+    return () => {
+      document.removeEventListener('openCreateProjectModal', openCreateProjectListener);
+    };
   }, []);
 
-  const filteredProjects = projects.filter(project =>
+  const filteredProjects = projects.filter((project) =>
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     project.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -76,7 +75,7 @@ export const ProjectsPage = () => {
 
   const handleGetUserInfo = async () => {
     try {
-      const user = await getCurrentUser(); // Получаем текущего пользователя
+      const user = await getCurrentUser();
       alert(`Текущий пользователь: ${user.name}, ${user.email}`);
     } catch (error) {
       console.error('Ошибка при получении информации о пользователе:', error);
@@ -107,8 +106,7 @@ export const ProjectsPage = () => {
         </Button>
       </Box>
 
-      {/* Кнопка для получения информации о текущем пользователе */}
-      <Box mb={4}>
+      <Box mb={2}>
         <Button variant="outlined" onClick={handleGetUserInfo}>
           Получить информацию о текущем пользователе
         </Button>
@@ -116,15 +114,9 @@ export const ProjectsPage = () => {
 
       {currentUser && (
         <Box mb={4}>
-          <Typography variant="h6">
-            Информация о пользователе:
-          </Typography>
-          <Typography variant="body1">
-            Имя: {currentUser.name}
-          </Typography>
-          <Typography variant="body1">
-            Email: {currentUser.email}
-          </Typography>
+          <Typography variant="h6">Информация о пользователе:</Typography>
+          <Typography variant="body1">Имя: {currentUser.name}</Typography>
+          <Typography variant="body1">Email: {currentUser.email}</Typography>
         </Box>
       )}
 
@@ -137,13 +129,13 @@ export const ProjectsPage = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
             startAdornment: (
-              <IconButton>
+              <IconButton disabled>
                 <Search />
               </IconButton>
             ),
             endAdornment: searchTerm && (
               <IconButton onClick={() => setSearchTerm('')}>
-                <FilterList />
+                <Close />
               </IconButton>
             ),
           }}
@@ -151,11 +143,21 @@ export const ProjectsPage = () => {
       </Box>
 
       {projects.length === 0 ? (
-        <Typography variant="body1" align="center" color="text.secondary" sx={{ mt: 4 }}>
+        <Typography
+          variant="body1"
+          align="center"
+          color="text.secondary"
+          sx={{ mt: 4 }}
+        >
           Проектов пока нет (｡╯︵╰｡)
         </Typography>
       ) : filteredProjects.length === 0 ? (
-        <Typography variant="body1" align="center" color="text.secondary" sx={{ mt: 4 }}>
+        <Typography
+          variant="body1"
+          align="center"
+          color="text.secondary"
+          sx={{ mt: 4 }}
+        >
           Проекты не найдены
         </Typography>
       ) : (
@@ -180,10 +182,21 @@ export const ProjectsPage = () => {
                   <Typography variant="h6" component="h2" gutterBottom>
                     {project.name}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    paragraph
+                  >
                     {project.description}
                   </Typography>
-                  <Typography variant="caption" color={project.status === 'active' ? 'success.main' : 'text.secondary'}>
+                  <Typography
+                    variant="caption"
+                    color={
+                      project.status === 'active'
+                        ? 'success.main'
+                        : 'text.secondary'
+                    }
+                  >
                     {project.status === 'active' ? 'Активный' : 'Завершен'}
                   </Typography>
                 </CardContent>

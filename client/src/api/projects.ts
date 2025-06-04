@@ -39,6 +39,22 @@ export const getProjects = async (token: string): Promise<Project[]> => {
   }
 };
 
+export const findProjectByName = async (name: string, token: string): Promise<Project | null> => {
+  try {
+    const response = await axios.get(`${process.env.REACT_APP_API_URL}/projects?name=${encodeURIComponent(name)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+  
+    const projects = response.data as Project[];
+    return projects.length > 0 ? projects[0] : null;
+
+  } catch (error) {
+    console.error('Ошибка поиска проекта по названию:', error);
+    return null;
+  }
+};
+
 // Создать новый проект
 export const createProject = async (
   projectData: CreateProjectData,

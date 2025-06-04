@@ -13,7 +13,7 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({ projects }) => {
   const [voiceCommand, setVoiceCommand] = useState('');
   const [isRecording, setIsRecording] = useState(false);
 
-  const handleVoiceCommand = (command: string) => {
+  const handleVoiceCommand = async (command: string) => {
     const cleaned = command.trim().toLowerCase().replace(/[.,!?;:]/g, '');
     setVoiceCommand(cleaned);
 
@@ -42,17 +42,34 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({ projects }) => {
     else if (cleaned.includes('создать проект')) {
       document.dispatchEvent(new CustomEvent('openCreateProjectModal'));
     }
-    if (cleaned.startsWith('открыть проект ')) {
+    else if (cleaned.startsWith('открыть проект ')) {
       const projectName = cleaned.replace('открыть проект ', '').trim();
-
-      // Поиск проекта по названию (поиск без учета регистра)
-      const project = projects.find((p: { name: string; }) => p.name.toLowerCase() === projectName.toLowerCase());
-
-      if (project) {
-        navigate(`/projects/${project.id}`);
-      } else {
-        setVoiceCommand(`Проект с названием "${projectName}" не найден`);
+    
+      try {
+        // Запрашиваем все проекты пользователя
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/projects/`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+    
+        if (!response.ok) throw new Error('Не удалось получить список проектов');
+    
+        const projectsList = await response.json();
+    
+        // Ищем проект по названию без учёта регистра
+        const project = projectsList.find((p: { name: string; }) => p.name.toLowerCase() === projectName.toLowerCase());
+    
+        if (project) {
+          navigate(`/projects/${project.id}`);
+        } else {
+          setVoiceCommand(`Проект с названием "${projectName}" не найден`);
+        }
+      } catch (error: any) {
+        setVoiceCommand(`Ошибка при поиске проекта: ${error.message}`);
       }
+    
       return;
     }
     else if (cleaned.includes('создать')) {
