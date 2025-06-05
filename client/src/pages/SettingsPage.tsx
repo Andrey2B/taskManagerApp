@@ -65,9 +65,8 @@ const uploadAvatar = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('avatar', file);
 
-  const response = await fetch('http://127.0.0.1:8000/upload-avatar', {
+  const response = await fetch('/upload-avatar', {
     method: 'POST',
-    
     body: formData,
   });
 
@@ -198,6 +197,7 @@ export const SettingsPage = () => {
   const [passwordChanged, setPasswordChanged] = useState(false);
 
   const handleChangePassword = async () => {
+    const token = localStorage.getItem('token');
     if (
       !passwordData.oldPassword.trim() ||
       !passwordData.newPassword.trim() ||
@@ -223,9 +223,12 @@ export const SettingsPage = () => {
     setPasswordError(null);
   
     try {
-      const response = await fetch('/change-password', {
+      const response = await fetch('http://127.0.0.1:8000/change-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
           oldPassword: passwordData.oldPassword,
           newPassword: passwordData.newPassword,

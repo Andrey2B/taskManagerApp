@@ -45,7 +45,17 @@ def update_profile(update: UserUpdate, db: Session = Depends(get_db), current_us
 
 
 @router.post("/change-password")
-def change_password(data: PasswordChange, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def change_password(
+    data: PasswordChange,
+    db: Session = Depends(get_db),
+    token_user: User = Depends(get_current_user)
+):
+    # Загрузить fresh экземпляр из текущей сессии
+    current_user = db.query(User).filter(User.id == token_user.id).first()
+
+    if not current_user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
     if not pwd_context.verify(data.oldPassword, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Старый пароль неверен")
 

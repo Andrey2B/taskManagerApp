@@ -66,7 +66,7 @@ class Task(Base):
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
     priority = Column(String, nullable=True)  # 'low', 'medium' и т.п.
-    status = Column(String, default="поставлена")
+    status = Column(String, default="todo")
     due_date = Column(DateTime, nullable=True)  # соответствие dueDate
     type = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # assignedTo

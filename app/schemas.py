@@ -59,7 +59,7 @@ class TaskBase(BaseModel):
     title: str
     description: Optional[str] = None
     priority: Optional[int] = None
-    status: Optional[str] = "поставлена"  # статус по умолчанию
+    status: Optional[str] = "todo"  # статус по умолчанию
 
 
 class TaskCreate(BaseModel):
@@ -69,7 +69,7 @@ class TaskCreate(BaseModel):
     due_date: Optional[datetime] = None
     priority: Optional[str] = None  # low, medium, high, critical
     type: str  # marketing, development, design, research
-    status: Optional[str] = "поставлена"  # добавлено поле status с дефолтом
+    status: Optional[str] = "todo"  # добавлено поле status с дефолтом
 
     class Config:
         orm_mode = True

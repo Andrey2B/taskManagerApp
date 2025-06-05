@@ -14,8 +14,16 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({ projects }) => {
   const [isRecording, setIsRecording] = useState(false);
 
   const handleVoiceCommand = async (command: string) => {
+    const token = localStorage.getItem('token');
+    const isAuth = Boolean(token);
+
     const cleaned = command.trim().toLowerCase().replace(/[.,!?;:]/g, '');
     setVoiceCommand(cleaned);
+
+    if (!isAuth) {
+      setVoiceCommand('Пользователь не авторизован');
+      return;
+    }
 
     if (cleaned.includes('проекты')) {
       navigate('/projects');
@@ -36,31 +44,29 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({ projects }) => {
       navigate('/settings');
     }
     else if (cleaned.includes('выход') || cleaned.includes('выйти')) {
-      // Логика выхода
-      console.log('Выход из системы');
+      localStorage.removeItem('token');
+      navigate('/login');
+      setVoiceCommand('Вы вышли из системы');
     }
     else if (cleaned.includes('создать проект')) {
       document.dispatchEvent(new CustomEvent('openCreateProjectModal'));
     }
     else if (cleaned.startsWith('открыть проект ')) {
       const projectName = cleaned.replace('открыть проект ', '').trim();
-    
+
       try {
-        // Запрашиваем все проекты пользователя
         const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000'}/projects/`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-    
+
         if (!response.ok) throw new Error('Не удалось получить список проектов');
-    
+
         const projectsList = await response.json();
-    
-        // Ищем проект по названию без учёта регистра
         const project = projectsList.find((p: { name: string; }) => p.name.toLowerCase() === projectName.toLowerCase());
-    
+
         if (project) {
           navigate(`/projects/${project.id}`);
         } else {
@@ -69,7 +75,7 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({ projects }) => {
       } catch (error: any) {
         setVoiceCommand(`Ошибка при поиске проекта: ${error.message}`);
       }
-    
+
       return;
     }
     else if (cleaned.includes('создать')) {
@@ -82,6 +88,7 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({ projects }) => {
       console.log('Команда не распознана:', command);
     }
   };
+
 
   const flatten = (chunks: Float32Array[]) => {
     const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
