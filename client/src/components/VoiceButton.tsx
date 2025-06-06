@@ -81,8 +81,15 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({ projects }) => {
     else if (cleaned.includes('создать')) {
       document.dispatchEvent(new CustomEvent('openCreateNewProjectModal'));
     }
-    else if (cleaned.includes('создать задачу')) {
-      document.dispatchEvent(new CustomEvent('openCreateTaskModal'));
+    else if (cleaned === 'создай задачу' || cleaned === 'создать задачу') {
+      if (projects.length === 0) {
+        setVoiceCommand('Список проектов пуст или еще загружается, невозможно создать задачу');
+        return;
+      }
+      const projectId = projects[0].id;
+      console.log('IdProject:', projectId);
+      navigate(`/projects/${projectId}/new-task`);
+      return;
     }
     else {
       console.log('Команда не распознана:', command);

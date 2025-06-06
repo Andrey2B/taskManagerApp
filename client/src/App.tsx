@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import React, { useState } from 'react'; 
+import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Layout from './components/layout/Layout';
 import DashboardPage from './pages/DashboardPage';
@@ -19,6 +19,7 @@ import { NewProjectPage } from './pages/NewProjectPage';
 import { Task, CreateTaskDto } from './types/task';
 import { addTask } from './api/tasks';
 import VoiceButton from './components/VoiceButton';
+import { Project } from './types/project';
 
 // Обёртка для TaskForm, чтобы получить projectId из URL
 const TaskFormWrapper: React.FC<{
@@ -28,7 +29,6 @@ const TaskFormWrapper: React.FC<{
 }> = ({ onSubmit, initialData, onClose }) => {
   const { id: projectId } = useParams<{ id: string }>();
 
-  // Если projectId нет — показываем ошибку
   if (!projectId) {
     return <div>Ошибка: проект не найден</div>;
   }
@@ -46,7 +46,10 @@ const TaskFormWrapper: React.FC<{
 
 const App: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [taskToEdit, setTaskToEdit] = useState<Partial<Task> | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [voiceCommand, setVoiceCommand] = useState<string>('');
 
   const handleSubmitTaskForm = async (formData: FormData) => {
     const projectId = formData.get('projectId');
@@ -54,14 +57,13 @@ const App: React.FC = () => {
       console.error('projectId не найден или некорректен');
       return;
     }
-  
-    // Создать объект задачи из formData, кроме projectId — можно вручную
+
     const taskData: CreateTaskDto = {
       title: formData.get('title') as string,
       description: formData.get('description') as string,
-      type: 'marketing'
+      type: 'marketing',
     };
-  
+
     try {
       await addTask(projectId, taskData);
       navigate(-1);
@@ -73,6 +75,9 @@ const App: React.FC = () => {
   const handleAuthSuccess = () => {
     navigate('/');
   };
+
+  // Здесь условие: не показываем VoiceButton на странице входа/регистрации (/auth)
+  const showVoiceButton = location.pathname !== '/auth';
 
   return (
     <AuthProvider>
@@ -118,6 +123,9 @@ const App: React.FC = () => {
           {/* Страница 404 */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+
+        {/* Кнопка голосового помощника, отображается везде кроме /auth */}
+        {showVoiceButton && <VoiceButton projects={projects} />}
       </CustomThemeProvider>
     </AuthProvider>
   );

@@ -138,6 +138,7 @@ export const ProjectPage: React.FC = () => {
       return;
     }
 
+
     setLoading(true);
     setError(null);
 
@@ -151,7 +152,7 @@ export const ProjectPage: React.FC = () => {
         setError('Ошибка загрузки данных');
       })
       .finally(() => setLoading(false));
-  }, [projectId, navigate, token]);
+  }, [projectId, token]);
 
   // Обработчики
 

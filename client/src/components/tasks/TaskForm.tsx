@@ -72,8 +72,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ open, onClose, onSubmit, initialDat
     initialValues: {
       title: initialData?.title || '',
       description: initialData?.description || '',
-      status: initialData?.status || '', // ← пусто
-      priority: initialData?.priority || '', // ← пусто
+      status: initialData?.status || 'todo', 
+      priority: initialData?.priority || 'medium', 
       type: initialData?.type || '',
       dueDate: initialData?.dueDate ? new Date(initialData.dueDate) : null,
       assignedTo: initialData?.assignedTo || '',

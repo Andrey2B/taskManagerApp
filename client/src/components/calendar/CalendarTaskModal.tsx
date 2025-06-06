@@ -46,7 +46,7 @@ const CalendarTaskModal: React.FC<CalendarTaskModalProps> = ({ open, onClose, da
         <TaskForm
             open={open}
             onClose={onClose}
-            onSubmit={async (taskData) => {
+            onSubmit={async (taskData: any) => {
               console.log('Создать задачу:', taskData);
               // Если нужно выполнить асинхронные действия, например, отправить запрос на сервер:
               // await yourAsyncFunction(taskData);
